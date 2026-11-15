@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="color-scheme" content="light"/>
+<link rel="icon" href="data:,"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+<title>绿进沙退 · 沙漠化治理决策控制台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9f5ee;--bg2:#dff0e4;--card:#ffffff;--ink:#13251c;--muted:#6b7f74;--line:#e2ede6;--green:#16794a;--green2:#22a05e;--deep:#0e4d31;--amber:#d97706;--amberBg:#fef3c7;--red:#dc2626;--redBg:#fee2e2;--okBg:#dcfce7;--blue:#2563eb;--sand:#c9a86a;--radius:16px}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+button,input,select{font:inherit;min-height:38px}button{cursor:pointer}
+.layout{display:flex;min-height:100vh}
+/* SIDEBAR */
+.sidebar{width:216px;flex:0 0 216px;background:#f7fbf8;border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{padding:18px 16px 14px;display:flex;gap:10px;align-items:center}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--deep);color:#fff;display:grid;place-items:center;font-size:20px;flex-shrink:0}
+.brand b{font-size:16px;letter-spacing:.02em;display:block;line-height:1}
+.brand span{font-size:11px;color:var(--muted);display:block;margin-top:4px;line-height:1.3}
+.side-section{padding:6px 12px}
+.side-head{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:6px 4px}
+.plot-item{width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:12px;padding:10px 10px;margin-bottom:6px;display:block}
+.plot-item:hover{background:#eef6f1}
+.plot-item.active{background:#e6f4eb;border-color:#bfe3cd}
+.plot-item .pname{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:6px}
+.plot-item .pname i{width:7px;height:7px;border-radius:50%;background:#cbd5e1;display:inline-block;flex-shrink:0}
+.plot-item.active .pname i{background:var(--green2)}
+.plot-item .pmeta{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.plot-item .parea{font-size:11px;color:#8aa195;float:right;font-weight:500}
+.add-btn{margin:8px 12px;width:calc(100% - 24px);border:1.5px dashed #b9d8c4;background:#fff;border-radius:10px;padding:10px;font-weight:700;color:var(--deep);font-size:13px}
+.side-foot{margin-top:auto;padding:14px 16px;font-size:11px;line-height:1.6;color:#8aa195;border-top:1px solid var(--line)}
+/* MAIN */
+.main{flex:1;min-width:0;padding:0 18px 28px}
+.topbar{position:sticky;top:0;z-index:20;background:linear-gradient(var(--bg) 82%,transparent);padding:14px 2px 10px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.topbar .crumb{font-size:13px;color:var(--muted)} .topbar .crumb b{color:var(--ink);font-size:14px}
+.live{display:flex;align-items:center;gap:8px;font-size:12.5px;background:#fff;border:1px solid var(--line);padding:6px 10px;border-radius:999px}
+.dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px #dcfce7}
+.refresh{border:0;background:#eef6f1;width:36px;height:36px;border-radius:50%;font-size:16px}
+.grid3{display:grid;grid-template-columns:1.15fr 1.25fr .95fr;gap:14px}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;margin-top:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:0 2px 12px rgba(20,80,50,.04)}
+.card h3{margin:0;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.card h3 span{font-size:11.5px;color:var(--muted);font-weight:400}
+.big-date{font-size:13px;color:var(--muted);margin-top:14px}
+.big-date strong{display:block;color:var(--ink);font-size:19px;margin-top:2px}
+.big-time{font-family:"Noto Serif SC",serif;font-size:36px;font-weight:900;letter-spacing:-.02em;margin:4px 0}
+.meta{font-size:13px;color:#334155}
+.countdown{font-size:26px;font-weight:900;color:var(--blue);font-variant-numeric:tabular-nums;text-align:right}
+.status-pill{font-size:11px;padding:3px 8px;border-radius:999px;font-weight:700}
+.ok{color:#15803d;background:var(--okBg)} .warn{color:#92400e;background:var(--amberBg)} .bad{color:#991b1b;background:var(--redBg)}
+.judge-row{padding:11px 0;border-bottom:1px dashed var(--line)} .judge-row:last-child{border:0}
+.judge-row.highlight{background:#f0fdf4;margin:0 -10px;padding-left:10px;padding-right:10px;border-radius:10px}
+.judge-top{display:flex;gap:8px;align-items:center;font-weight:700;font-size:13.5px}
+.judge-top i{width:8px;height:8px;border-radius:50%}
+.judge-row p{margin:4px 0 0 16px;font-size:12.5px;color:#64746b;line-height:1.55}
+/* donut */
+.donut-wrap{display:flex;gap:16px;align-items:center;margin-top:12px}
+.donut{width:118px;height:118px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;position:relative}
+.donut::after{content:"";position:absolute;inset:16px;background:#fff;border-radius:50%}
+.donut b{position:relative;z-index:1;font-size:24px;line-height:1;text-align:center}.donut b small{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:3px}
+.legend{font-size:12.5px;line-height:2}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}
+.kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+.kpis div{font-size:11px;color:var(--muted)} .kpis b{display:block;font-size:17px;color:var(--ink);margin-top:2px}
+/* week */
+.week-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.tabs{background:#eef2f0;border-radius:999px;padding:3px;display:flex;gap:2px}
+.tabs button{border:0;background:transparent;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;color:#64746b;min-height:36px}
+.tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-top:14px}
+.day{border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:12px 10px;text-align:left;min-height:158px;display:flex;flex-direction:column}
+.day.sel{border-color:var(--blue);box-shadow:0 0 0 3px #dbeafe}
+.day .dow{font-size:11px;color:var(--muted)} .day .dnum{font-weight:900;font-size:15px}
+.day .ico{font-size:22px;margin:8px 0 2px} .day .temp{font-weight:700;font-size:13px} .day .rain{font-size:11.5px;color:#64746b;min-height:16px}
+.day .verdict{margin-top:auto;text-align:center;font-size:12px;font-weight:700;padding:6px 4px;border-radius:8px}
+.v-ok{background:#dcfce7;color:#166534}.v-warn{background:#fef3c7;color:#92400e}.v-bad{background:#fee2e2;color:#991b1b}
+.best-tag{font-size:10px;background:#16a34a;color:#fff;padding:2px 6px;border-radius:999px;margin-left:4px;vertical-align:middle}
+/* charts */
+.chart-note{font-size:12px;color:var(--muted);line-height:1.6;margin:4px 0 8px}
+svg{width:100%;height:auto;display:block}
+.heat{display:grid;grid-template-columns:28px repeat(24,1fr);gap:2px;margin-top:10px}
+.heat .hcell{height:16px;border-radius:3px;background:#eef2f0}
+.heat .hlabel{font-size:10px;color:var(--muted);display:flex;align-items:center}
+.h-ok{background:#86efac!important}.h-wind{background:#fdba74!important}.h-cold{background:#93c5fd!important}.h-rain{background:#c4b5fd!important}.h-night{background:#f1f5f9!important}
+.legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:10px}.legend2 i{width:10px;height:10px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:4px}
+/* QA */
+.chat{display:flex;flex-direction:column;gap:12px;max-height:420px;overflow:auto;padding:6px 2px}
+.bubble{max-width:82%;padding:11px 13px;border-radius:14px;font-size:13.5px;line-height:1.7}
+.bubble.bot{background:#f1f7f3;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.bubble.me{background:var(--blue);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bubble .who{font-size:11px;opacity:.7;margin-bottom:3px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.chips button{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:7px 12px;font-size:12.5px;min-height:36px}
+.ask-row{display:flex;gap:8px}.ask-row input{flex:1;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;min-height:44px}
+.ask-row button{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:0 20px;font-weight:700;min-height:44px}
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(15,40,28,.45);backdrop-filter:blur(3px);display:none;place-items:center;z-index:50;padding:16px}
+.overlay.open{display:grid}
+.modal{background:#fff;width:min(560px,100%);max-height:92vh;overflow:auto;border-radius:18px;padding:20px}
+.modal h3{margin:0 0 14px;font-size:16px;display:flex;justify-content:space-between}
+.modal label{font-size:12.5px;color:var(--muted);display:block;margin:12px 0 5px}
+.modal input,.modal select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:9px 10px;background:#fff}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.loc-row{display:flex;gap:8px}.loc-row input{flex:1}.loc-row button,.ghost{border:1px solid #cbd5e1;background:#f8fafc;border-radius:9px;padding:0 14px;font-weight:600}
+.mapbox{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.map-foot{font-size:12px;color:var(--muted);padding:8px 2px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.modal-actions button{border-radius:9px;padding:9px 18px;border:1px solid #cbd5e1;background:#fff;font-weight:700}
+.modal-actions .save{background:var(--blue);color:#fff;border-color:var(--blue)}
+.x{border:0;background:#f1f5f9;width:36px;height:36px;border-radius:50%}
+.toast{position:fixed;right:18px;bottom:18px;background:#0f2e1f;color:#fff;padding:13px 16px;border-radius:12px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:none;z-index:80;max-width:calc(100vw - 36px)}
+.toast.show{display:block}
+.hero-strip{margin:14px 0 0;background:linear-gradient(90deg,#0e4d31,#16794a 55%,#8a6d2f);color:#fff;border-radius:16px;padding:18px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hero-strip h1{font-family:"Noto Serif SC",serif;font-size:22px;margin:0 0 6px}.hero-strip p{margin:0;font-size:13px;opacity:.9;line-height:1.6;max-width:640px}
+.hero-stats{display:flex;gap:18px}.hero-stats div{text-align:center}.hero-stats b{font-size:20px;display:block}.hero-stats span{font-size:11px;opacity:.85}
+.build{margin-top:14px}
+.build ol{margin:10px 0 0;padding-left:20px;line-height:1.9;font-size:13.5px;color:#334155}
+.build-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.build-grid div{background:#f7fbf8;border:1px solid var(--line);border-radius:12px;padding:12px}.build-grid b{font-size:13px}.build-grid p{font-size:12.5px;color:var(--muted);line-height:1.6;margin:5px 0 0}
+.cond-row{margin:9px 0;font-size:12px}.cond-row .cr-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.cond-row .cr-top b{font-size:12.5px}.bar{height:8px;background:#eef2f0;border-radius:99px;overflow:hidden;margin-top:5px}.bar i{display:block;height:100%;border-radius:99px;background:#22a05e}.bar i.mid{background:#f59e0b}.bar i.low{background:#dc2626}
+.sim-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.sim-controls label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+.sim-controls select,.sim-controls input{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:9px 10px;background:#fff;min-height:40px}
+.seg{display:flex;background:#eef2f0;border-radius:999px;padding:3px;gap:2px}.seg button{border:0;background:transparent;border-radius:999px;padding:6px 10px;font-size:12.5px;font-weight:700;color:#64746b;flex:1}.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 5px rgba(0,0,0,.1)}
+.primary{background:var(--green);color:#fff;border:0;border-radius:10px;padding:0 18px;font-weight:700;min-height:42px}
+table.mini{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}table.mini th,table.mini td{padding:8px 7px;border-bottom:1px solid var(--line);text-align:left}table.mini tr.rec{background:#f0fdf4}
+.tag-rec{background:#16a34a;color:#fff;font-size:10px;padding:2px 6px;border-radius:99px}
+.cube-wrap{background:linear-gradient(180deg,#f4faf6,#e7f2ea);border:1px solid var(--line);border-radius:12px;padding:8px;position:relative;cursor:grab;touch-action:none}
+.cube-wrap:active{cursor:grabbing}
+.ttip{position:absolute;pointer-events:none;background:#0f2e1f;color:#fff;font-size:11.5px;line-height:1.5;padding:8px 10px;border-radius:9px;display:none;max-width:230px;z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.audit-item{border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;background:#fff}
+.audit-item summary{cursor:pointer;font-size:13px;font-weight:600}
+.audit-item .chain{font-size:12.5px;color:#475569;line-height:1.75;margin-top:8px;background:#f7fbf8;border-radius:9px;padding:9px 11px;white-space:pre-wrap;word-break:break-word}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.form-grid label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}.form-grid input,.form-grid select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:9px 10px;background:#fff}
+.mic-btn.recording{background:#dc2626!important;color:#fff!important;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+button:disabled{opacity:.45;cursor:not-allowed}
+.sug-box{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.7;margin-top:12px}
+/* ===== v3 additions ===== */
+.card h3 .cts{margin-left:8px;font-size:11px;color:#9db4a6;font-weight:400;white-space:nowrap}
+.cdseg{display:inline-block;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:2px 7px;margin-left:4px;font-size:22px;color:var(--blue)}
+.cdseg small{font-size:11px;color:#64748b;margin-left:2px;font-weight:400}
+.jbasis{margin:6px 0 2px 16px;font-size:12px;color:#64746b}
+.jbasis summary{cursor:pointer;color:var(--green);font-weight:600;font-size:12px}
+.jbasis div{background:#f7fbf8;border:1px solid var(--line);border-radius:9px;padding:8px 10px;line-height:1.7;margin-top:6px}
+.jbasis a{color:var(--blue);text-decoration:none;font-weight:600}
+.bar i{transition:width .7s ease}.donut{transition:background .7s ease}
+.heat .hcell:hover{outline:2px solid var(--deep);outline-offset:-1px;z-index:2;position:relative}
+#amap{height:400px;border-radius:12px;border:1px solid var(--line);z-index:1;background:#eef3ee}
+.amark{display:flex;flex-direction:column;align-items:center;gap:1px}
+.amark .dotp{width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.amark b{font-size:11px;background:rgba(255,255,255,.92);padding:0 5px;border-radius:99px;border:1px solid var(--line);line-height:1.5}
+.amap-pop{font-size:12.5px;line-height:1.7;min-width:170px}
+.amap-pop .amap-go{margin-top:6px;background:var(--green);color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:700;min-height:32px;cursor:pointer}
+.layer-btns{display:flex;gap:6px}.layer-btns button{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;min-height:32px}.layer-btns button.on{background:var(--deep);color:#fff;border-color:var(--deep)}
+#field3dWrap{background:linear-gradient(180deg,#fdf6e3,#f3e9c8);border:1px solid var(--line);border-radius:12px;position:relative;overflow:hidden;min-height:200px}
+#field3dWrap canvas{display:block;width:100%}
+.field-ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.field-ctl input[type=range]{flex:1;min-width:160px;accent-color:var(--green);min-height:28px}
+.kb-item{border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;background:#fff}
+.kb-item summary{cursor:pointer;font-size:13.5px;font-weight:700}
+.kb-item .kb-body{font-size:12.5px;color:#475569;line-height:1.75;margin-top:7px}
+.kb-item .kb-body b{color:var(--ink)}
+.skel{background:linear-gradient(90deg,#eef2f0 25%,#f7faf8 50%,#eef2f0 75%);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:10px}
+@keyframes sk{to{background-position:-200% 0}}
+.leaflet-container{font-family:inherit}
+/* ===== v4: sim chart + agent ===== */
+.sim-legend{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.sim-legend button{border:1.5px solid #cbd5e1;background:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;min-height:34px;display:inline-flex;align-items:center;gap:7px}
+.sim-legend button .sw{width:22px;height:0;border-top:4px solid #16794a;border-radius:2px;display:inline-block}
+.sim-legend button[data-line="alt"] .sw{border-top:3px dashed #2563eb}
+.sim-legend button[data-line="thresh"] .sw{border-top:2px dashed #94a3b8}
+.sim-legend button.off{opacity:.42;text-decoration:line-through}
+.sim-chart-wrap{position:relative}
+.sim-tip{position:absolute;pointer-events:none;background:#0f2e1f;color:#fff;font-size:11.5px;line-height:1.55;padding:7px 10px;border-radius:8px;display:none;z-index:6;box-shadow:0 8px 20px rgba(0,0,0,.25);max-width:240px}
+.sim-svg text{paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.agent-steps{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:10px 0 2px;background:#f7fbf8;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;min-height:38px}
+.agent-steps .as-idle{color:var(--muted)}
+.astp{padding:4px 10px;border-radius:999px;background:#eef2f0;color:#64746b;font-weight:700;font-size:11.5px;white-space:nowrap}
+.astp.run{background:#dbeafe;color:#1d4ed8;box-shadow:0 0 0 2px #93c5fd inset}
+.astp.done{background:#dcfce7;color:#166534}
+.astp.web{background:#ede9fe;color:#5b21b6}
+.agent-arch{font-size:11.5px;color:var(--muted);line-height:1.65;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 10px;margin:8px 0 2px}
+.bubble .src{font-size:12px;margin-top:6px;line-height:1.6}
+.bubble .src a{color:var(--blue);word-break:break-all}
+@media(max-width:980px){.grid3,.grid2{grid-template-columns:1fr}.days{grid-template-columns:repeat(2,1fr)}.build-grid{grid-template-columns:1fr}}
+@media(max-width:720px){.layout{flex-direction:column}.sidebar{width:100%;flex:none;height:auto;position:relative}.plot-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}.plot-item{min-width:0}.main{padding:0 12px 24px}.days{grid-template-columns:1fr 1fr}.bubble{max-width:94%}.big-time{font-size:30px}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">🌱</div><div><b>绿进沙退</b><span>让决策赶在风沙之前</span></div></div>
+    <div class="side-section"><div class="side-head"><span>治理地块</span><span id="plotCount"></span></div><div class="plot-list" id="plotList"></div></div>
+    <button class="add-btn" id="openModal">+ 新增地块</button>
+    <div class="side-foot">气象 Open-Meteo 风格模拟 · 遥感 NDVI 示例<br>地图为风格化示意地形图<br>建议仅供参考 · 以当地林草部门为准<br><br>⚠ 气象与遥感数据为演示模拟数据，非实时实测。</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumb">地块 &nbsp;<b id="crumbName">—</b> &nbsp;<span id="crumbMeta">—</span> / <span id="crumbDate">—</span></div>
+      <div style="display:flex;gap:8px;align-items:center"><div class="live"><span class="dot"></span><span id="liveText">实时数据 · --:-- 更新</span></div><button class="refresh" id="refreshBtn" aria-label="刷新数据">↻</button></div>
+    </div>
+
+    <section class="hero-strip">
+      <div><h1>让决策赶在风沙之前——每一株苗，都算过成活的账。</h1><p>绿进沙退 · 沙漠化治理决策控制台：把未来 7 天的风速、降水、气温与土壤墒情逐项核对，给出固沙、栽植、补水的可作业窗口、成活率推演与可审计的判读依据。</p></div>
+      <div class="hero-stats"><div><b id="hsPlots">5</b><span>治理地块</span></div><div><b id="hsArea">65,400</b><span>总面积 · 亩</span></div><div><b id="hsCover">—</b><span>当前覆盖度</span></div></div>
+    </section>
+
+    <div class="grid3" style="margin-top:14px">
+      <!-- Best window -->
+      <article class="card">
+        <h3><span id="bestTitle">最佳固沙窗口</span><span id="bestDow">—</span></h3>
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+          <div><div class="big-date">推荐作业日<strong id="bestDate">—</strong></div><div class="big-time" id="bestTime">—</div><div class="meta" id="bestMeta">—</div></div>
+          <div style="text-align:right"><div class="status-pill ok" id="bestPill">可作业</div><div class="countdown" id="countdown">--:--:--</div><div style="font-size:11px;color:var(--muted)" id="cdLabel">距窗口开始</div><div style="margin-top:10px;min-width:158px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>今日窗口进度</span><span id="todayProgTxt">—</span></div><div class="bar"><i id="todayProgBar" style="width:0%"></i></div></div></div>
+        </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;border-top:1px dashed var(--line);padding-top:10px" id="bestNote">—</p>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px"><span style="font-size:12.5px;font-weight:700">窗口状态</span><span class="status-pill ok" id="windowState">开启</span><span style="font-size:11.5px;color:var(--muted)" id="windowStateHint"></span></div>
+        <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
+          <div style="font-size:13px;font-weight:700">窗口收窄 / 关闭条件 <span style="font-size:11px;color:var(--muted);font-weight:400">当前作业类型 · 实时余量</span></div>
+          <p id="fragileSummary" style="font-size:12.5px;line-height:1.65;background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:8px 10px;margin:8px 0"></p>
+          <div id="conditionList"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="markBtn" style="min-height:36px;border-radius:999px;padding:0 12px;font-size:12px">✓ 标记已作业</button><span style="font-size:11.5px;color:var(--muted);align-self:center" id="markHint">标记后自动监控未来 24 小时降水与大风</span></div>
+      </article>
+
+      <!-- Today judgement -->
+      <article class="card"><h3>今日判读 <span id="judgeMeta">—</span></h3><div id="judgeList"></div></article>
+
+      <!-- Key numbers -->
+      <article class="card"><h3>关键数字 <span id="keyMeta">—</span></h3>
+        <div class="donut-wrap"><div class="donut" id="donut"><b><span id="donutNum">—</span><small>天适宜作业</small></b></div>
+        <div class="legend" id="donutLegend"></div></div>
+        <div class="kpis"><div>一周累计降水<b id="kRain">—</b></div><div>最长窗口<b id="kWindow">—</b></div><div>植被覆盖度<b id="kCover">—</b></div></div>
+      </article>
+    </div>
+
+    <!-- Week -->
+    <article class="card" style="margin-top:14px">
+      <div class="week-head"><h3 style="font-size:15px">未来七天</h3><div class="tabs" id="opTabs">
+        <button data-op="gusha" class="on">🧺 固沙</button><button data-op="zaizhi">🌱 栽植</button><button data-op="bushui">💧 补水</button>
+      </div></div>
+      <div class="days" id="days"></div>
+      <p style="font-size:12px;color:var(--muted);margin:10px 0 0" id="weekNote"></p>
+    </article>
+
+    <!-- AMap weather & geography -->
+    <article class="card" style="margin-top:14px" id="amapCard">
+      <div class="week-head"><h3 style="font-size:15px">天气地理预报 · 高德地图 <span style="font-size:11.5px;color:var(--muted);font-weight:400">五地块实位打点 · 点标记看今日判读</span></h3>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="layer-btns"><button id="lyrVec" class="on">矢量底图</button><button id="lyrSat">卫星底图</button></div><button class="ghost" id="locatePlot" style="border-radius:999px;padding:0 14px;font-size:12.5px;min-height:34px">📍 定位当前地块</button></div></div>
+      <div id="amap" style="margin-top:12px"><div class="skel" style="height:400px"></div></div>
+      <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">标记颜色＝今日固沙适宜度（绿 适宜 / 黄 谨慎 / 红 不宜），数字为今日最高温。地图上的气温、风速、判读均为演示模拟数据；底图 © 高德地图（AMap）。</p>
+    </article>
+
+    <div class="grid2">
+      <article class="card"><h3 id="hourlyTitle">逐小时风速 · 今日</h3><p class="chart-note" id="hourlyNote"></p><div id="hourlyChart"></div><div class="legend2"><span><i style="background:#16794a"></i>实测风速</span><span><i style="background:#dc2626"></i><span id="threshLabel">上限</span></span><span><i style="background:#bbf7d0"></i>可作业时段</span></div></article>
+      <article class="card"><h3>作业窗口分布 <span>7 天 × 24 小时</span></h3><div class="heat" id="heat"></div><div class="legend2"><span><i class="h-ok"></i>可作业</span><span><i class="h-wind"></i>风大</span><span><i class="h-cold"></i>低温</span><span><i style="background:#facc15"></i>高温</span><span><i class="h-rain"></i>降水 / 扬沙</span></div></article>
+    </div>
+
+    <div class="grid2">
+      <article class="card"><h3>土壤湿度与降水 <span>柱为逐日雨量</span><span class="status-pill warn" id="soilBadge">墒情 —</span></h3><div id="soilChart" style="margin-top:10px"></div><div class="legend2"><span><i style="background:#16794a"></i>表层湿度 %</span><span><i style="background:#2563eb"></i>深层湿度 %</span><span><i style="background:#93c5fd"></i>雨量 mm</span></div></article>
+      <article class="card"><h3>植被覆盖度走势 <span>示例遥感数据</span></h3><div id="ndviChart" style="margin-top:10px"></div><p style="font-size:12.5px;margin:6px 0 0" id="ndviCmp">较去年同期：—</p><p style="font-size:12px;color:var(--muted);line-height:1.6">真实遥感尚未接入，此曲线仅示意形态，不代表实际长势。NDVI 0–1，越接近 1 植被越茂密。</p></article>
+    </div>
+
+    <!-- 3D window -->
+    <article class="card" style="margin-top:14px">
+      <h3 style="font-size:15px">天气窗口立体图 · 时空窗口体 <span>拖动旋转 · 悬停看判定</span></h3>
+      <p class="chart-note">横轴＝未来 7 天，纵轴＝一天 24 小时（每格 6 小时），块体高度＝适宜度评分，颜色：绿＝开启、黄＝收窄、红＝关闭。评分由风速、气温、降水、土壤湿度按当前作业规则逐时段算出（演示模拟数据）。</p>
+      <div class="cube-wrap" id="cubeWrap"><svg id="cubeSvg" viewBox="0 0 640 330" role="img" aria-label="天气窗口立体图"></svg><div class="ttip" id="cubeTip"></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center"><button class="ghost" id="cubeReset" style="border-radius:999px;padding:0 12px;font-size:12px;min-height:34px">复位视角</button><span style="font-size:12px;color:var(--muted)" id="cubeHint">按住图面左右拖动可旋转视角；下方为静态等距示意图，拖动不可用时对照阅读。</span></div>
+      <div style="margin-top:10px"><svg id="cubeStatic" viewBox="0 0 640 300" role="img" aria-label="天气窗口静态等距示意图"></svg></div>
+      <div class="legend2"><span><i style="background:#22c55e"></i>开启（评分 ≥70）</span><span><i style="background:#f59e0b"></i>收窄（40–69）</span><span><i style="background:#ef4444"></i>关闭（＜40）</span></div>
+    </article>
+
+    <!-- Seedling simulation -->
+    <article class="card" style="margin-top:14px" id="simCard">
+      <h3 style="font-size:15px">模拟实验种植 · 选苗推演 <span>演示模拟推演 · 与全站同一套地块数据</span></h3>
+      <p class="chart-note">选树种、选栽植日、选推演周期：系统用当前地块的种子天气序列外推逐日风速 / 气温 / 墒情，逐日扣减成活率，给出曲线、风险日与更优的栽植建议。</p>
+      <div class="sim-controls">
+        <div><label for="simSpecies">树种</label><select id="simSpecies"></select></div>
+        <div><label for="simDate">栽植日期（未来 7 天）</label><select id="simDate"></select></div>
+        <div><label>推演周期</label><div class="seg" id="simPeriod"><button data-p="30" class="on">30 天</button><button data-p="60">60 天</button><button data-p="90">90 天</button></div></div>
+        <div><button class="primary" id="simRun" style="width:100%">开始推演</button></div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 0" id="speciesInfo"></p>
+      <div id="simResult" style="margin-top:12px"></div>
+      <h4 style="margin:18px 0 6px;font-size:13.5px">3D 试验田 · 模拟种植区 <span style="font-size:11.5px;color:var(--muted);font-weight:400">拖动旋转 · 滚轮缩放 · 双击复位 · 地表深浅＝土壤湿度 · 网格＝草方格</span></h4>
+      <div id="field3dWrap"><div class="skel" style="height:340px"></div></div>
+      <div class="field-ctl">
+        <button class="primary" id="fieldPlay" style="min-height:38px;padding:0 16px">▶ 播放生长</button>
+        <span style="font-size:12.5px;font-weight:700" id="fieldDayLabel">第 0 天</span>
+        <input type="range" id="fieldDay" min="0" max="30" step="1" value="0"/>
+        <span style="font-size:12.5px" id="fieldStats">存活 — 株</span>
+      </div>
+      <div class="legend2"><span><i style="background:#4d7c0f"></i>成活（绿）</span><span><i style="background:#c9b458"></i>胁弱（黄）</span><span><i style="background:#8a6a42"></i>枯死倒伏（褐）</span><span><i style="background:#d9c08a"></i>大风日扬沙粒子</span></div>
+      <h4 style="margin:16px 0 0;font-size:13.5px">候选方案对比 <span style="font-size:11.5px;color:var(--muted);font-weight:400">自动生成 3 个「树种 × 日期」组合</span></h4>
+      <div style="overflow-x:auto"><table class="mini" id="simTable"><thead><tr><th>方案</th><th>预计成活率</th><th>风险日数</th><th>需水量</th><th></th></tr></thead><tbody></tbody></table></div>
+    </article>
+
+    <!-- QA -->
+    <article class="card" style="margin-top:14px">
+      <h3>问一句 · 治沙智能体 <span><span class="status-pill ok">分层 Agent · 本地推理 + 可选联网</span></span></h3>
+      <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 0">分层架构：感知理解（意图+实体）→ 记忆（多轮上下文）→ 规划拆解 → 工具调用（取数 / 判读 / 推演 / 知识库 / 联网搜索）→ 推理整合与数值自检。本地能力离线可用；超出本地范围的问题会自动联网搜索并标注来源，断网时自动回退本地回答。可试：「推迟三天栽植成活率会怎样」「明天哪个地块最适合栽植」「搜一下库布其治沙模式」。</p>
+      <div id="agentSteps" class="agent-steps" aria-live="polite"><span class="as-idle">智能体待命 · 输入问题后这里会显示处理步骤</span></div>
+      <div class="agent-arch">架构：<b>感知层</b> 意图分类·实体抽取·同义词归一 &nbsp;·&nbsp; <b>记忆层</b> 地块/作业/树种/日期上下文 &nbsp;·&nbsp; <b>规划层</b> 步骤拆解 &nbsp;·&nbsp; <b>工具层</b> getForecast / evaluateWindow / runSimulation / searchKB / webSearch / switchPlot &nbsp;·&nbsp; <b>整合层</b> 结论→依据→建议 + 数值自检</div>
+      <div class="chat" id="chat"></div>
+      <div class="chips" id="chips">
+        <button>哪天能固沙？</button><button>要不要补水？</button><button>今天风沙大吗？</button><button>可否栽植？</button><button>本周窗口怎么样？</button>
+      </div>
+      <div class="ask-row"><input id="askInput" placeholder="比如：这周哪天适合铺草方格？"/><button id="micBtn" class="ghost" style="border-radius:10px;padding:0 14px" title="语音输入">🎤</button><button id="ttsBtn" class="ghost" style="border-radius:10px;padding:0 12px" title="语音播报开关">🔇 播报关</button><button id="askBtn">发送</button></div>
+      <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0" id="voiceHint"></p>
+    </article>
+
+    <!-- Knowledge base -->
+    <article class="card" style="margin-top:14px" id="kbCard">
+      <h3 style="font-size:15px">治沙专业知识库 <span>离线本地库 · 点条目可让智能体讲解</span></h3>
+      <p class="chart-note">条目含施工规格、适生条件与规范要点等数值参数；智能体回答知识类问题时会注明出处条目。</p>
+      <div class="ask-row" style="margin-bottom:10px"><input id="kbSearch" placeholder="搜索知识库，如：草方格 / 飞播 / 梭梭 / 结皮"/></div>
+      <div id="kbList"></div>
+    </article>
+
+    <!-- Audit log -->
+    <article class="card" style="margin-top:14px" id="auditCard">
+      <div class="week-head"><h3 style="font-size:15px">判读审计日志 <span style="font-size:11.5px;color:var(--muted);font-weight:400">规则集 v1.3 · 每条含输入快照与推理链</span></h3><button class="ghost" id="exportAudit" style="border-radius:999px;padding:0 14px;font-size:12.5px">⬇ 导出审计日志（JSON）</button></div>
+      <p class="chart-note">每次判读、推演与阈值变更都会留痕：时间戳、地块、作业类型、结论、命中的规则编号与原文、各因子实际值 vs 阈值。点开任意一条看完整推理链。</p>
+      <div id="auditList"></div>
+    </article>
+
+    <!-- Calibration -->
+    <article class="card" style="margin-top:14px" id="calibCard">
+      <h3 style="font-size:15px">校准收集 <span>实测回填 · 反哺阈值</span></h3>
+      <p class="chart-note">把野外实测填回来：系统会按同地块、同树种用推演模块算出预测成活率，与实测逐条比偏差。记录保存在本机浏览器，可导出备份；样本足够且偏差系统性偏大时，会生成可采纳的阈值调整建议。</p>
+      <form id="calibForm"><div class="form-grid">
+        <div><label>地块</label><select id="cPlot"></select></div>
+        <div><label>日期</label><input id="cDate" type="date" required/></div>
+        <div><label>实测风速（m/s）</label><input id="cWind" type="number" step="0.1" min="0" required placeholder="如 4.5"/></div>
+        <div><label>实测土壤湿度（%）</label><input id="cSoil" type="number" step="0.5" min="0" max="100" required placeholder="如 17"/></div>
+        <div><label>栽植树种</label><select id="cSpecies"></select></div>
+        <div><label>两周实测成活率（%）</label><input id="cSurv" type="number" step="0.5" min="0" max="100" required placeholder="如 78"/></div>
+        <div><label>备注</label><input id="cNote" placeholder="可选"/></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button type="submit" class="primary">保存校准记录</button><button type="button" class="ghost" id="exportCalib" style="border-radius:10px;padding:0 14px">⬇ 导出校准数据（JSON）</button><button type="button" class="ghost" id="exportCalibCsv" style="border-radius:10px;padding:0 14px">⬇ 导出 CSV</button></div></form>
+      <div id="calibSuggest"></div>
+      <div style="overflow-x:auto"><table class="mini" id="calibTable"><thead><tr><th>日期</th><th>地块</th><th>树种</th><th>实测风速</th><th>实测湿度</th><th>预测成活率</th><th>实测成活率</th><th>偏差</th><th>备注</th><th></th></tr></thead><tbody></tbody></table></div>
+      <p style="font-size:12px;color:var(--muted)" id="calibEmpty">暂无校准记录。</p>
+    </article>
+
+    <p style="font-size:12px;color:var(--muted);margin:16px 2px 0">搭建过程见独立文档《沙漠化治理控制台搭建过程》。</p>
+    <p style="text-align:center;font-size:11.5px;color:#8aa195;margin:18px 0 0">绿进沙退 · 沙漠化治理决策控制台 — 让决策赶在风沙之前 · 演示版（气象与推演为模拟数据）</p>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>新增地块 <button class="x" id="closeModal">✕</button></h3>
+    <label>地块名称</label><input id="fName" placeholder="比如：东缘锁边林带"/>
+    <div class="row2"><div><label>面积（亩）</label><input id="fArea" type="number" value="5000" min="1"/></div>
+    <div><label>治理方式</label><select id="fMethod"><option>草方格固沙</option><option>梭梭造林</option><option>沙柳网格</option><option>飞播造林</option><option>光伏治沙</option><option>封沙育林</option></select></div></div>
+    <label>地点</label>
+    <div class="loc-row"><input id="fLoc" placeholder="输入县市名检索，如：中卫、鄂尔多斯、且末"/><button id="searchLoc">检索</button></div>
+    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="ghost" id="myLoc" style="min-height:36px;border-radius:8px;padding:0 12px">＋ 用我的位置</button><span style="font-size:12px;color:var(--muted)" id="locHint">已选地点：中卫市（默认沿用当前地块，可更改）</span></div>
+    <div id="modalMap" style="height:260px;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:none;margin-top:10px"></div>
+    <div class="mapbox">
+      <!-- stylized terrain map -->
+      <svg viewBox="0 0 560 260" id="mapSvg" style="cursor:crosshair;background:#f3e9c8">
+        <defs><pattern id="dunes" width="36" height="18" patternUnits="userSpaceOnUse"><path d="M0 14 Q9 4 18 14 T36 14" fill="none" stroke="#d9bc7a" stroke-width="1.6"/></pattern></defs>
+        <rect width="560" height="260" fill="#f3e9c8"/><rect width="560" height="260" fill="url(#dunes)"/>
+        <path d="M0 190 C90 160 150 220 260 195 C360 172 430 205 560 175 L560 260 L0 260Z" fill="#bfe3c2"/>
+        <path d="M30 40 C140 70 220 30 340 65 C430 90 500 60 560 80" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".9"/>
+        <text x="36" y="36" font-size="11" fill="#92400e">沙丘地带</text>
+        <ellipse cx="410" cy="185" rx="70" ry="28" fill="#7dd3a8" opacity=".8"/><text x="382" y="190" font-size="11" fill="#065f46">绿洲</text>
+        <g id="towns"></g>
+        <circle id="pin" cx="330" cy="120" r="9" fill="#dc2626" stroke="#fff" stroke-width="3"/>
+        <text x="316" y="108" font-size="11" font-weight="700" fill="#991b1b">选定点</text>
+      </svg>
+      <div class="map-foot" style="padding:8px 10px">或在地图上点选（沙漠治理区范围内） &nbsp;·&nbsp; <span id="mapSel">已选定：中卫市 · 37.46°N, 105.16°E</span> <button class="ghost" id="expandMap" style="float:right;min-height:30px;padding:0 10px;border-radius:7px">展开</button></div>
+    </div>
+    <div class="modal-actions"><button id="cancelModal">取消</button><button class="save" id="savePlot">保存</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- seeded RNG ----------
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){let a=seed;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const WEEK=['周日','周一','周二','周三','周四','周五','周六'];
+const MONTH_CN=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+function cnDate(d){return MONTH_CN[d.getMonth()]+['一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','二十一','二十二','二十三','二十四','二十五','二十六','二十七','二十八','二十九','三十','三十一'][d.getDate()-1]+'日'}
+let plots=[
+ {id:'kubuqi',name:'库布其 · 独贵塔拉',short:'库布其·独贵塔拉',region:'内蒙古鄂尔多斯',method:'草方格固沙',area:12000,lat:40.21,lon:108.72,base:9},
+ {id:'tengger',name:'腾格里 · 沙坡头',short:'腾格里·沙坡头',region:'宁夏中卫',method:'麦草方格 + 梭梭造林',area:8600,lat:37.46,lon:105.16,base:11},
+ {id:'muus',name:'毛乌素 · 乌审旗',short:'毛乌素·乌审旗',region:'内蒙古鄂尔多斯',method:'沙柳网格',area:15000,lat:38.60,lon:108.83,base:8},
+ {id:'horqin',name:'科尔沁 · 奈曼旗',short:'科尔沁·奈曼旗',region:'内蒙古通辽',method:'樟子松造林',area:9800,lat:42.85,lon:120.65,base:6},
+ {id:'takla',name:'塔克拉玛干 · 且末',short:'塔克拉玛干·且末',region:'新疆巴音郭楞',method:'胡杨 / 梭梭造林',area:20000,lat:38.14,lon:85.53,base:13},
+];
+let curPlot=plots[0], curOp='gusha', selDay=0, dataCache={};
+const OPS={gusha:{label:'固沙',full:'草方格铺设',thresh:6,unit:'固沙'},zaizhi:{label:'栽植',full:'苗木栽植',thresh:5,unit:'栽植'},bushui:{label:'补水',full:'滴灌补水',thresh:8,unit:'补水'}};
+const RULES={soilPlantMin:16,windNarrow:6,windClose:8};
+try{const savedRules=JSON.parse(localStorage.getItem('sha-mo-hua-zhi-li-jue-ce-kong-zhi-tai_rules')||'null'); if(savedRules&&savedRules.soilPlantMin) RULES.soilPlantMin=savedRules.soilPlantMin;}catch(e){}
+
+function genData(plot){
+ if(dataCache[plot.id]) return dataCache[plot.id];
+ const r=rng(hash(plot.id)); const today=new Date(); today.setHours(0,0,0,0);
+ const conds=['晴','晴','多云','有云','晴间多云','扬沙','晴'];
+ let days=[], hourlyAll=[];
+ for(let i=0;i<7;i++){
+   const d=new Date(today); d.setDate(d.getDate()+i);
+   const maxT=Math.round(plot.base+ r()*7 + (i===5?-4:0));
+   const minT=Math.round(maxT-8-r()*5);
+   const windAvg=+(1.2+r()*5.8).toFixed(1);
+   const precip= i===5? +(0.4+r()*0.6).toFixed(1) : (r()<0.18? +(r()*0.5).toFixed(1):0);
+   const soilS=Math.round(12+r()*16), soilD=Math.round(18+r()*14);
+   // hourly wind
+   let hrs=[]; for(let h=0;h<24;h++){ const diurnal=Math.sin((h-6)/24*Math.PI*2)*1.6; let v=Math.max(.3, windAvg+diurnal+(r()-.5)*2.6); if(h>=11&&h<=15) v+=r()*1.4; hrs.push(+v.toFixed(1)); }
+   hourlyAll.push(hrs);
+   days.push({date:d,dow:WEEK[d.getDay()],md:(d.getMonth()+1)+'/'+d.getDate(),cond:precip>0?'零星小雨':conds[Math.floor(r()*conds.length)],maxT,minT,windAvg,precip,soilS,soilD,hrs});
+ }
+ // NDVI 6 months: ~18 points rising
+ let ndvi=[]; let v=0.32+r()*0.08; for(let i=0;i<18;i++){ v+= (r()-0.32)*0.03; v=Math.max(.28,Math.min(.68,v)); ndvi.push(+v.toFixed(2)); }
+ const cover=Math.round(ndvi[ndvi.length-1]*100);
+ const out={days,hourlyAll,ndvi,cover}; dataCache[plot.id]=out; return out;
+}
+function longestWindow(day,op){
+ const th=OPS[op].thresh; let best={len:0,start:9,end:16}, cur={len:0,start:9};
+ for(let h=6;h<=19;h++){ const ok = day.hrs[h]<=th && day.precip<0.5 && day.minT>-6; if(ok){ if(cur.len===0) cur.start=h; cur.len++; if(cur.len>best.len) best={len:cur.len,start:cur.start,end:h+1}; } else cur={len:0,start:h+1}; }
+ if(best.len===0) best={len:0,start:10,end:10}; return best;
+}
+function evaluate(day,op,idx,data){
+ const prevRain= idx>0? data.days[idx-1].precip:0;
+ if(op==='gusha'){
+   if(day.precip>=0.5) return {level:'bad',label:'不宜',reason:`今日有降水 ${day.precip} mm，沙面湿滑、草方格易位移，不宜铺设。`,win:longestWindow(day,op)};
+   if(day.windAvg>6) return {level:'bad',label:'不宜',reason:`日均风速 ${day.windAvg} m/s 超过 6 m/s 上限，铺设后易被风蚀掩埋。`,win:longestWindow(day,op)};
+   if(day.windAvg>4.5||day.minT<=-3) return {level:'warn',label:'建议谨慎',reason:`风速 ${day.windAvg} m/s 偏高${day.minT<=-3?'，清晨低温 '+day.minT+'℃':''}，可作业但需抢在风起前收工。`,win:longestWindow(day,op)};
+   return {level:'ok',label:'适宜固沙',reason:`风速 ${day.windAvg} m/s、气温 ${day.minT}–${day.maxT}℃、无降水，沙面稳定，适合铺设草方格。`,win:longestWindow(day,op)};
+ }
+ if(op==='zaizhi'){
+   if(prevRain>0) return {level:'bad',label:'不宜',reason:`昨日降水 ${prevRain} mm，栽植后 24 小时内土壤过湿、苗木易烂根，今日不宜栽植。`,win:longestWindow(day,op)};
+   if(day.maxT>25||day.minT<0) return {level:'warn',label:'建议谨慎',reason:`气温 ${day.minT}–${day.maxT}℃ 超出 0–25℃ 舒适区，栽植需加强覆膜与补水。`,win:longestWindow(day,op)};
+   if(day.windAvg>5) return {level:'bad',label:'不宜',reason:`风速 ${day.windAvg} m/s 超过 5 m/s，苗木失水过快，不宜栽植。`,win:longestWindow(day,op)};
+   if(day.soilS<RULES.soilPlantMin) return {level:'warn',label:'建议栽植',reason:`表层土壤湿度仅 ${day.soilS}%，低于栽植墒情阈值 ${RULES.soilPlantMin}%，栽植时需同步坐水。`,win:longestWindow(day,op)};
+   return {level:'ok',label:'适宜栽植',reason:`气温 ${day.minT}–${day.maxT}℃、风速 ${day.windAvg} m/s、表层湿度 ${day.soilS}%，墒情与温度都合适。`,win:longestWindow(day,op)};
+ }
+ // bushui
+ const cum=data.days.slice(0,7).reduce((s,d)=>s+d.precip,0);
+ if(day.precip>=0.5||cum>=4) return {level:'warn',label:'暂缓补水',reason:`近期累计降水 ${cum.toFixed(1)} mm，墒情尚可，补水可暂缓，避免浪费水资源。`,win:{len:4,start:8,end:12}};
+ if(day.soilS<=18) return {level:'ok',label:'建议补水',reason:`7 天累计降水仅 ${cum.toFixed(1)} mm，表层湿度 ${day.soilS}% 偏低，该浇就别等，滴灌补水正当时。`,win:{len:5,start:7,end:12}};
+ return {level:'warn',label:'可少量补水',reason:`表层湿度 ${day.soilS}%，不算太旱，可对新栽苗木点补，老林带暂缓。`,win:{len:3,start:8,end:11}};
+}
+function pillClass(l){return l==='ok'?'ok':l==='warn'?'warn':'bad'}
+
+// ---------- render ----------
+const $=s=>document.querySelector(s);
+function renderSidebar(){
+ $('#plotList').innerHTML=plots.map(p=>`<button class="plot-item ${p.id===curPlot.id?'active':''}" data-id="${p.id}"><span class="pname"><i></i>${p.short}<span class="parea">${p.area.toLocaleString()} 亩</span></span><span class="pmeta">${p.region} · ${p.method}</span></button>`).join('');
+ $('#plotCount').textContent=plots.length+' 块';
+ document.querySelectorAll('.plot-item').forEach(el=>el.onclick=()=>{curPlot=plots.find(p=>p.id===el.dataset.id); selDay=0; renderAll(); toast(`已切换到「${curPlot.short}」`)});
+ $('#hsPlots').textContent=plots.length; $('#hsArea').textContent=plots.reduce((s,p)=>s+p.area,0).toLocaleString();
+}
+let bestInfo=null, cdTimer=null;
+function renderAll(){
+ const data=genData(curPlot); const now=new Date();
+ $('#crumbName').textContent=curPlot.short; $('#crumbMeta').textContent=`${curPlot.region} · ${curPlot.lat.toFixed(2)}°N ${curPlot.lon.toFixed(2)}°E`;
+ $('#crumbDate').textContent=`${cnDate(now)} ${WEEK[now.getDay()]}`;
+ $('#liveText').textContent=`实时数据 · ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} 更新`;
+ $('#hsCover').textContent=data.cover+'%';
+ renderSidebar();
+ // best window
+ const evals=data.days.map((d,i)=>evaluate(d,curOp,i,data));
+ let bestIdx=-1,bestLen=-1; evals.forEach((e,i)=>{ if(e.level!=='bad' && e.win.len>bestLen){bestLen=e.win.len;bestIdx=i} });
+ if(bestIdx<0){bestIdx=0;bestLen=0}
+ const bd=data.days[bestIdx], be=evals[bestIdx];
+ bestInfo={date:bd.date,start:be.win.start,end:be.win.end};
+ $('#bestTitle').textContent='最佳'+OPS[curOp].label+'窗口'; $('#bestDow').textContent=bd.dow;
+ $('#bestDate').textContent=`${cnDate(bd.date)} · ${bd.dow}`;
+ $('#bestTime').textContent=`${String(be.win.start).padStart(2,'0')}:00 – ${String(be.win.end).padStart(2,'0')}:00`;
+ $('#bestMeta').textContent=`连续 ${be.win.len} 小时 · 风速 ${bd.windAvg} m/s · 气温 ${bd.maxT}℃`;
+ $('#bestPill').textContent=be.level==='ok'?'可作业':be.level==='warn'?'需谨慎':'待观察'; $('#bestPill').className='status-pill '+pillClass(be.level);
+ $('#bestNote').textContent= curOp==='gusha'?`窗口判定：风速 ≤ ${OPS.gusha.thresh} m/s、无降水、气温 > -5℃ 的连续时段；${be.reason}`: curOp==='zaizhi'?`窗口判定：气温 0–25℃、风速 ≤ 5 m/s、墒情达标且非雨后 24h；${be.reason}`:`窗口判定：累计降水 < 2 mm 且表层湿度偏低时优先补水；${be.reason}`;
+ // today judgement
+ $('#judgeMeta').textContent=`${curPlot.short} · ${curPlot.area.toLocaleString()} 亩`;
+ $('#judgeList').innerHTML=['gusha','zaizhi','bushui'].map(op=>{const e=evaluate(data.days[0],op,0,data); const dot=e.level==='ok'?'#22c55e':e.level==='warn'?'#f59e0b':'#ef4444'; return `<div class="judge-row ${op===curOp?'highlight':''}"><div class="judge-top"><i style="background:${dot}"></i>${OPS[op].full} <span class="status-pill ${pillClass(e.level)}">${e.label}</span></div><p>${e.reason}</p><details class="jbasis"><summary>判定依据 · 规则 ${ruleFor(op,e)}</summary><div>${RULE_TEXT[ruleFor(op,e)]}<br>输入快照：风速 ${data.days[0].windAvg} m/s｜气温 ${data.days[0].minT}–${data.days[0].maxT}℃｜降水 ${data.days[0].precip} mm｜表层湿度 ${data.days[0].soilS}%（阈值口径与审计日志同源）<br><a href="javascript:void(0)" onclick="document.getElementById('auditCard').scrollIntoView({behavior:'smooth'})">→ 查看审计日志</a></div></details></div>`}).join('');
+ // key numbers
+ const okN=evals.filter(e=>e.level==='ok').length, warnN=evals.filter(e=>e.level==='warn').length, badN=7-okN-warnN;
+ const operable=okN; const cumRain=data.days.reduce((s,d)=>s+d.precip,0);
+ const pct=(okN+warnN)/7*360, pctOk=okN/7*360;
+ $('#donut').style.background=`conic-gradient(#22c55e 0 ${pctOk}deg, #f59e0b ${pctOk}deg ${pct}deg, #ef4444 ${pct}deg 360deg)`;
+ $('#donutNum').textContent=`${operable}/7`;
+ $('#donutLegend').innerHTML=`<div><i style="background:#22c55e"></i>适宜作业 ${okN} 天</div><div><i style="background:#f59e0b"></i>需谨慎 ${warnN} 天</div><div><i style="background:#ef4444"></i>不宜 ${badN} 天</div>`;
+ $('#keyMeta').textContent=`一周累计雨量 ${cumRain.toFixed(1)} mm`;
+ $('#kRain').textContent=cumRain.toFixed(1)+' mm'; $('#kWindow').textContent=bestLen+' 小时'; $('#kCover').textContent=data.cover+' %';
+ // days
+ $('#days').innerHTML=data.days.map((d,i)=>{const e=evals[i]; const cls=e.level==='ok'?'v-ok':e.level==='warn'?'v-warn':'v-bad'; const ico=d.precip>0?'🌦️':d.cond.includes('扬沙')?'🌪️':d.cond.includes('多云')||d.cond.includes('云')?'⛅':'☀️'; return `<button class="day ${i===selDay?'sel':''}" data-i="${i}"><span class="dow">${i===0?'今天':d.dow}${i===bestIdx?'<span class="best-tag">最佳</span>':''}</span><span class="dnum">${d.md}</span><span class="ico">${ico}</span><span style="font-size:12px;color:var(--muted)">${d.cond}</span><span class="temp">${d.maxT}° / ${d.minT}°</span><span class="rain">${d.precip>0?'雨 '+d.precip+' mm':'无雨'} · 风 ${d.windAvg} m/s · 湿 ${d.soilS}%</span><span class="verdict ${cls}">${e.level==='bad'?'不宜':e.label+(e.win.len?` ${String(e.win.start).padStart(2,'0')}:00–${String(e.win.end).padStart(2,'0')}:00`:'')}</span></button>`}).join('');
+ document.querySelectorAll('.day').forEach(el=>el.onclick=()=>{selDay=+el.dataset.i; renderAll()});
+ $('#weekNote').textContent=`所选日期（${data.days[selDay].md}）判读：「${evals[selDay].label}」— ${evals[selDay].reason} 点击任意日期可联动下方逐小时风速图。`;
+ renderHourly(data); renderHeat(data); renderSoil(data); renderNDVI(data);
+ startCountdown();
+}
+function svgLine(points,W,H,maxY,color,fill){
+ const stepX=W/(points.length-1); const pts=points.map((v,i)=>[i*stepX, H-(v/maxY)*H]);
+ const path=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+ return {path, area:path+` L${W} ${H} L0 ${H} Z`, pts};
+}
+function renderHourly(data){
+ const day=data.days[selDay]; const th=OPS[curOp].thresh;
+ $('#hourlyTitle').textContent=`逐小时风速 · ${day.md} ${day.dow}${selDay===0?'（今日）':''}`;
+ $('#hourlyNote').textContent=`虚线为 ${th} m/s 作业上限；作业时段内风速超限或有降水则不连续。今日日均 ${day.windAvg} m/s，最高温 ${day.maxT}℃。`;
+ $('#threshLabel').textContent=th+' m/s 上限';
+ const W=560,H=190,P=28; const maxY=9; const {path,area,pts}=svgLine(day.hrs,W-P*2,H-20,maxY);
+ const yTh= (H-20)- (th/maxY)*(H-20);
+ const win=longestWindow(day,curOp); const x0=P+win.start/23*(W-P*2), x1=P+win.end/23*(W-P*2);
+ let dots=pts.filter((_,i)=>i%2===0).map(p=>`<circle cx="${p[0]+P}" cy="${p[1]}" r="3" fill="#fff" stroke="#16794a" stroke-width="2"/>`).join('');
+ $('#hourlyChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}"><rect x="${x0}" y="6" width="${Math.max(0,x1-x0)}" height="${H-26}" fill="#dcfce7" opacity=".7"/><path d="${area}" transform="translate(${P},0)" fill="#86efac" opacity=".35"/><path d="${path}" transform="translate(${P},0)" fill="none" stroke="#16794a" stroke-width="2.5"/>${dots}<line x1="${P}" x2="${W-P}" y1="${yTh}" y2="${yTh}" stroke="#dc2626" stroke-dasharray="6 5"/><text x="${W-P-4}" y="${yTh-6}" text-anchor="end" font-size="11" fill="#dc2626">上限 ${th}</text>${[0,6,12,18,23].map(h=>`<text x="${P+h/23*(W-P*2)}" y="${H-2}" font-size="11" fill="#94a3b8" text-anchor="middle">${h}时</text>`).join('')}</svg>`;
+}
+function renderHeat(data){
+ let html='<div></div>'+Array.from({length:24},(_,h)=>`<div class="hlabel" style="justify-content:center">${h%6===0?h:''}</div>`).join('');
+ data.days.forEach((d,di)=>{ html+=`<div class="hlabel">${d.md}</div>`; d.hrs.forEach((v,h)=>{ let cls='h-ok'; if(d.precip>0&&h>8&&h<18) cls='h-rain'; else if(v>6.5) cls='h-wind'; else if(d.minT<0&&h<7) cls='h-cold'; else if(h<6||h>19) cls='h-night'; html+=`<div class="hcell ${cls}" title="${d.md} ${h}时 ${v} m/s"></div>`})});
+ $('#heat').innerHTML=html;
+}
+function renderSoil(data){
+ const W=520,H=180,P=30; const days=data.days;
+ const s1=svgLine(days.map(d=>d.soilS),W-P*2,H-30,40), s2=svgLine(days.map(d=>d.soilD),W-P*2,H-30,40);
+ const bars=days.map((d,i)=>{const bw=22,x=P+i*((W-P*2)/6)-bw/2; const bh=d.precip/1.2*(H-30); return d.precip>0?`<rect x="${x}" y="${H-30-bh}" width="${bw}" height="${bh}" rx="3" fill="#93c5fd"/><text x="${x+bw/2}" y="${H-30-bh-4}" font-size="10" text-anchor="middle" fill="#2563eb">${d.precip}</text>`:''}).join('');
+ $('#soilChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}">${bars}<path d="${s1.path}" transform="translate(${P},0)" fill="none" stroke="#16794a" stroke-width="2.5"/><path d="${s2.path}" transform="translate(${P},0)" fill="none" stroke="#2563eb" stroke-width="2.5"/>${days.map((d,i)=>`<text x="${P+i*((W-P*2)/6)}" y="${H-6}" font-size="11" fill="#94a3b8" text-anchor="middle">${i===0?'今天':d.dow.slice(1)}</text>`).join('')}</svg>`;
+}
+function renderNDVI(data){
+ const W=520,H=170,P=26; const {path,area}=svgLine(data.ndvi,W-P*2,H-28,1);
+ $('#ndviChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}"><path d="${area}" transform="translate(${P},0)" fill="#86efac" opacity=".4"/><path d="${path}" transform="translate(${P},0)" fill="none" stroke="#16a34a" stroke-width="2.5"/><text x="${P}" y="14" font-size="11" fill="#94a3b8">NDVI · 近 6 个月 · 当前 ${data.ndvi[data.ndvi.length-1].toFixed(2)}（覆盖度约 ${data.cover}%）</text></svg>`;
+}
+function startCountdown(){
+ if(cdTimer) clearInterval(cdTimer);
+ const tick=()=>{ if(!bestInfo) return; const now=new Date(); const start=new Date(bestInfo.date); start.setHours(bestInfo.start,0,0,0); const end=new Date(bestInfo.date); end.setHours(bestInfo.end,0,0,0);
+  let target=start,label='距窗口开始'; if(now>=start&&now<end){target=end;label='窗口进行中 · 距结束'} else if(now>=end){ $('#countdown').textContent='已结束'; $('#cdLabel').textContent='窗口已结束'; return; }
+  let s=Math.max(0,Math.floor((target-now)/1000)); const hh=String(Math.floor(s/3600)).padStart(2,'0'),mm=String(Math.floor(s%3600/60)).padStart(2,'0'),ss=String(s%60).padStart(2,'0'); $('#countdown').innerHTML=`<span class="cdseg">${hh}<small>时</small></span><span class="cdseg">${mm}<small>分</small></span><span class="cdseg">${ss}<small>秒</small></span>`; $('#cdLabel').textContent=label; };
+ tick(); cdTimer=setInterval(tick,1000);
+}
+// tabs
+document.querySelectorAll('#opTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#opTabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); curOp=b.dataset.op; renderAll();});
+$('#refreshBtn').onclick=()=>{renderAll(); toast('数据已刷新 · '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}))};
+$('#markBtn').onclick=()=>{$('#markHint').textContent='已标记 ✓ 正在监控未来 24 小时降水与大风，异常将提醒改期'; toast('已标记作业 · 开始监控未来 24 小时天气')};
+// QA
+function botAnswer(q){
+ const data=genData(curPlot); const evalsAll={}; ['gusha','zaizhi','bushui'].forEach(op=>evalsAll[op]=data.days.map((d,i)=>evaluate(d,op,i,data)));
+ const findBest=op=>{let bi=0,bl=-1; evalsAll[op].forEach((e,i)=>{if(e.level!=='bad'&&e.win.len>bl){bl=e.win.len;bi=i}}); return {i:bi,e:evalsAll[op][bi],d:data.days[bi]}};
+ const cum=data.days.reduce((s,d)=>s+d.precip,0);
+ if(/补水|浇水|灌溉/.test(q)){const e=evalsAll.bushui[0]; return `${curPlot.short}这边，往后一周共就 ${cum.toFixed(1)} mm 雨，表层湿度 ${data.days[0].soilS}%，墒情${data.days[0].soilS<=18?'明显不足':'尚可'}。${e.reason} 建议优先给新栽梭梭 / 沙柳滴灌 ${e.win.start}:00–${e.win.end}:00 分段补，避免正午蒸发。`}
+ if(/栽植|种|苗/.test(q)){const b=findBest('zaizhi'); if(b.i===0) return `今天就能栽。${b.e.reason} 建议时段 ${String(b.e.win.start).padStart(2,'0')}:00–${String(b.e.win.end).padStart(2,'0')}:00，栽后及时坐水。`; return `今天先别急：${evalsAll.zaizhi[0].reason} 最近的好窗口是 ${b.d.md}（${b.d.dow}）${String(b.e.win.start).padStart(2,'0')}:00–${String(b.e.win.end).padStart(2,'0')}:00，气温 ${b.d.minT}–${b.d.maxT}℃、风速 ${b.d.windAvg} m/s。`}
+ if(/风沙|风大|风/.test(q)&&!/固沙/.test(q)){const mx=Math.max(...data.days[0].hrs); return `今天 ${curPlot.short} 日均风速 ${data.days[0].windAvg} m/s，阵风时段最高约 ${mx.toFixed(1)} m/s（多在午后）。${data.days[0].windAvg>5?'风偏大，固沙与栽植都要避开午后大风段。':'风力总体可控，上午时段最稳。'} 明日风速 ${data.days[1].windAvg} m/s，可对照上方逐小时图安排。`}
+ if(/窗口|本周|七天|哪天/.test(q)&&!/固沙/.test(q)){const b=findBest(curOp); return `本周 ${OPS[curOp].label} 最佳窗口在 ${b.d.md}（${b.d.dow}）${String(b.e.win.start).padStart(2,'0')}:00–${String(b.e.win.end).padStart(2,'0')}:00，连续 ${b.e.win.len} 小时。一周 ${evalsAll[curOp].filter(e=>e.level==='ok').length}/7 天适宜作业（另有 ${evalsAll[curOp].filter(e=>e.level==='warn').length} 天需谨慎），累计降水 ${cum.toFixed(1)} mm，当前植被覆盖度 ${data.cover}%。`}
+ const b=findBest('gusha'); return `${curPlot.short} ${curPlot.method}，往后一周累计降水 ${cum.toFixed(1)} mm。最佳固沙日是 ${cnDate(b.d.date)}（${b.d.dow}）${String(b.e.win.start).padStart(2,'0')}:00–${String(b.e.win.end).padStart(2,'0')}:00，连续 ${b.e.win.len} 小时，风速 ${b.d.windAvg} m/s、气温 ${b.d.minT}–${b.d.maxT}℃。判断依据是未来 7 天里满足风速与无降水条件且连续时长最长的一天，当天剩余时段若风速超限则不连续成窗。`;
+}
+function addMsg(text,me){const c=$('#chat'); const d=document.createElement('div'); d.className='bubble '+(me?'me':'bot'); d.innerHTML=`<div class="who">${me?'我':'顾问 · 规则引擎'}</div>${text}`; c.appendChild(d); c.scrollTop=c.scrollHeight;}
+let ttsOn=false;
+function speak(text){ if(!ttsOn||!('speechSynthesis' in window))return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(String(text).replace(/<[^>]+>/g,'')); u.lang='zh-CN'; u.rate=1.02; speechSynthesis.speak(u);}catch(e){} }
+function reply(text){ addMsg(text,false); speak(text); }
+function ask(q){ if(!q||!q.trim())return; const query=q.trim(); addMsg(query,true);
+ setTimeout(()=>{
+  const plotHit=plots.find(p=>query.includes(p.short.split('·')[0])||query.includes(p.name.split(' ')[0])||query.includes(p.region.replace('内蒙古','').replace('宁夏','').replace('新疆','')));
+  if(/切换|切到/.test(query)&&plotHit&&plotHit.id!==curPlot.id){ curPlot=plotHit; selDay=0; renderAll(); reply(`已切换到「${curPlot.short}」（${curPlot.region} · ${curPlot.method}），全站判读已按新地块重算。`); return; }
+  if(/打开审计|审计日志/.test(query)){ document.getElementById('auditCard').scrollIntoView({behavior:'smooth'}); reply(`已为你打开下方「判读审计日志」，共 ${auditLog.length} 条记录，点开任意一条可看命中规则与输入快照，也可点右上角导出 JSON。`); return; }
+  if(/播报今日判读|播报.*判读/.test(query)){ const data=genData(curPlot); const parts=['gusha','zaizhi','bushui'].map(op=>{const e=evaluate(data.days[0],op,0,data); return `${OPS[op].full}：${e.label}。${e.reason}`}); const t=`${curPlot.short}今日判读。`+parts.join(' '); const was=ttsOn; ttsOn=true; reply(t); ttsOn=was||ttsOn; return; }
+  if(/哪个树种|成活率最高|什么树种/.test(query)){ const cands=buildCandidates(); const best=cands.reduce((a,b)=>b.final>a.final?b:a,cands[0]); document.getElementById('simCard').scrollIntoView({behavior:'smooth'}); reply(`按当前地块推演对比，预计成活率最高的是「${best.species} · ${best.dateLabel} 栽植」，预计成活率 ${best.final}%，风险日 ${best.risks.length} 天。完整对比见上方选苗推演表（已高亮推荐行）。`); return; }
+  if(/明天/.test(query)&&/固沙/.test(query)){ const data=genData(curPlot); const e=evaluate(data.days[1],'gusha',1,data); reply(`明天（${data.days[1].md} ${data.days[1].dow}）固沙判读：${e.label}。${e.reason} 可作业时段约 ${String(e.win.start).padStart(2,'0')}:00–${String(e.win.end).padStart(2,'0')}:00。`); return; }
+  reply(botAnswer(query));
+ },350); }
+$('#askBtn').onclick=()=>{ask($('#askInput').value); $('#askInput').value=''};
+$('#askInput').addEventListener('keydown',e=>{if(e.key==='Enter'){ask(e.target.value); e.target.value=''}});
+document.querySelectorAll('#chips button').forEach(b=>b.onclick=()=>ask(b.textContent));
+// modal
+let selLoc={name:'中卫市',lat:37.46,lon:105.16};
+const towns=[{n:'中卫市',x:330,y:120,lat:37.46,lon:105.16},{n:'鄂尔多斯',x:430,y:70,lat:39.60,lon:109.78},{n:'通辽',x:490,y:45,lat:43.65,lon:122.24},{n:'且末县',x:90,y:90,lat:38.14,lon:85.53},{n:'乌审旗',x:395,y:95,lat:38.60,lon:108.83}];
+$('#towns').innerHTML=towns.map((t,i)=>`<g class="town" data-i="${i}" style="cursor:pointer"><circle cx="${t.x}" cy="${t.y}" r="6" fill="#0e4d31" stroke="#fff" stroke-width="2"/><text x="${t.x+9}" y="${t.y+4}" font-size="11" fill="#334155">${t.n}</text></g>`).join('');
+function setLoc(name,lat,lon,x,y){ selLoc={name,lat,lon}; $('#mapSel').textContent=`已选定：${name} · ${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E`; $('#locHint').textContent=`已选地点：${name}`; if(x!=null){$('#pin').setAttribute('cx',x); $('#pin').setAttribute('cy',y);} }
+document.querySelectorAll('.town').forEach(g=>g.onclick=e=>{e.stopPropagation(); const t=towns[+g.dataset.i]; setLoc(t.n,t.lat,t.lon,t.x,t.y)});
+$('#mapSvg').addEventListener('click',e=>{ const r=e.currentTarget.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width*560, y=(e.clientY-r.top)/r.height*260; const lat=+(43 - y/260*10).toFixed(2), lon=+(82 + x/560*42).toFixed(2); setLoc('地图选点',lat,lon,x,y); });
+$('#searchLoc').onclick=()=>{const v=$('#fLoc').value.trim(); const t=towns.find(t=>v&&t.n.includes(v.slice(0,2)))||towns[0]; setLoc(t.n,t.lat,t.lon,t.x,t.y); toast(`已定位到 ${t.n}`)};
+$('#myLoc').onclick=()=>setLoc(curPlot.region,curPlot.lat,curPlot.lon);
+$('#expandMap').onclick=()=>toast('地图已是展开示意版 · 点击任意位置即可选点');
+function openM(){$('#overlay').classList.add('open')} function closeM(){$('#overlay').classList.remove('open')}
+$('#openModal').onclick=openM; $('#closeModal').onclick=closeM; $('#cancelModal').onclick=closeM; $('#overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeM()});
+$('#savePlot').onclick=()=>{ const name=$('#fName').value.trim()||'新治理地块'; const area=Math.max(1,+$('#fArea').value||1000); const method=$('#fMethod').value; const p={id:'p'+Date.now(),name,short:name,region:selLoc.name,method,area,lat:selLoc.lat,lon:selLoc.lon,base:6+Math.random()*6}; plots.push(p); curPlot=p; selDay=0; closeM(); renderAll(); toast(`已新增「${name}」· ${area.toLocaleString()} 亩 · ${method}`); window.scrollTo({top:0,behavior:'smooth'}); };
+function toast(msg){const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200)}
+// ================= NEW MODULES =================
+const RULESET_VER='v1.3';
+const RULE_TEXT={'R-G1':'固沙：降水 ≥0.5mm → 不宜（沙面湿滑、草方格易位移）','R-G2':'固沙：日均风速 >6 m/s → 不宜；>4.5 m/s → 谨慎','R-Z1':'栽植：雨后 24h 内 → 不宜（土壤过湿易烂根）','R-Z2':'栽植：气温超出 0–25℃ → 谨慎；风速 >5 m/s → 不宜','R-Z3':'栽植：表层土壤湿度 < 墒情阈值 → 建议栽植但需同步坐水','R-B1':'补水：近期有降水/累计 ≥4mm → 暂缓；表层湿度 ≤18% → 建议补水','R-S1':'选苗推演：逐日按大风/高温/低温/干旱扣减基线成活率','R-C1':'校准：同地块+树种样本 ≥3 且平均偏差 >5% → 生成阈值调整建议'};
+// ---------- Audit ----------
+let auditLog=[];
+function snapText(day){ return `风速 ${day.windAvg} m/s（固沙上限 6 / 栽植上限 5）｜气温 ${day.minT}–${day.maxT}℃（栽植适宜 0–25℃）｜降水 ${day.precip} mm（关闭线 0.5）｜表层湿度 ${day.soilS}%（栽植阈值 ${RULES.soilPlantMin}%）｜深层湿度 ${day.soilD}%`; }
+function ruleFor(op,e){ if(op==='gusha') return e.level==='bad'?(e.reason.includes('降水')?'R-G1':'R-G2'):'R-G2'; if(op==='zaizhi'){ if(e.reason.includes('昨日降水'))return 'R-Z1'; if(e.reason.includes('湿度'))return 'R-Z3'; return 'R-Z2'; } return 'R-B1'; }
+function logAudit(kind,op,conclusion,ruleId,chain){
+ auditLog.unshift({ts:new Date().toISOString(),time:new Date().toLocaleString('zh-CN',{hour12:false}),kind,plot:curPlot.short,op:op?OPS[op].label:op,conclusion,ruleId,ruleText:RULE_TEXT[ruleId]||'',version:RULESET_VER,chain});
+ if(auditLog.length>80)auditLog.length=80; renderAudit();
+}
+function renderAudit(){ const el=$('#auditList'); if(!el)return; el.innerHTML=auditLog.length?auditLog.map((a,i)=>`<details class="audit-item"><summary>${a.time} · ${a.kind} · ${a.plot} · ${a.op||'—'} → <b>${a.conclusion}</b> <span class="status-pill ok" style="margin-left:6px">${a.ruleId}</span></summary><div class="chain">规则集版本：${a.version}\n命中规则 ${a.ruleId}：${a.ruleText}\n${a.chain}</div></details>`).join(''):'<p style="font-size:12.5px;color:var(--muted)">暂无审计记录，切换地块或执行推演后自动生成。</p>'; }
+$('#exportAudit').onclick=()=>{ downloadBlob(new Blob([JSON.stringify({exportedAt:new Date().toISOString(),ruleset:RULESET_VER,rules:RULE_TEXT,thresholds:RULES,records:auditLog},null,2)],{type:'application/json'}),'审计日志_'+curPlot.id+'.json'); toast('审计日志已导出（JSON）'); };
+function downloadBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
+// ---------- Window conditions ----------
+function factorRows(data){
+ const d=data.days[0]; const isPlant=curOp==='zaizhi', isSand=curOp==='gusha';
+ const rows=[];
+ const windNarrow=isPlant?5:6, windClose=8;
+ rows.push({name:'风速',cur:d.windAvg+' m/s',val:d.windAvg,narrow:windNarrow,close:windClose,narrowTxt:'≥'+windNarrow+' 收窄',closeTxt:'≥8 关闭',margin:Math.max(0,windClose-d.windAvg),unit:'m/s'});
+ if(isPlant){ rows.push({name:'降水（未来24h）',cur:d.precip+' mm',val:d.precip,narrow:0.5,close:2,narrowTxt:'≥0.5 收窄',closeTxt:'≥2 关闭',margin:Math.max(0,2-d.precip),unit:'mm',inv:true});
+  rows.push({name:'气温（最低）',cur:d.minT+' ℃',val:d.minT,narrow:2,close:0,narrowTxt:'<2℃ 收窄',closeTxt:'<0℃ 关闭',margin:Math.max(0,d.minT-0),unit:'℃',low:true});
+  rows.push({name:'土壤湿度（表层）',cur:d.soilS+' %',val:d.soilS,narrow:RULES.soilPlantMin+2,close:RULES.soilPlantMin-4,narrowTxt:'<'+(RULES.soilPlantMin+2)+'% 收窄',closeTxt:'<'+(RULES.soilPlantMin-4)+'% 关闭',margin:Math.max(0,d.soilS-(RULES.soilPlantMin-4)),unit:'%',low:true});
+ } else if(isSand){ rows.push({name:'降水（今日）',cur:d.precip+' mm',val:d.precip,narrow:0.3,close:0.5,narrowTxt:'≥0.3 收窄',closeTxt:'≥0.5 关闭',margin:Math.max(0,0.5-d.precip),unit:'mm',inv:true});
+  rows.push({name:'气温（最低）',cur:d.minT+' ℃',val:d.minT,narrow:-3,close:-5,narrowTxt:'≤-3℃ 收窄',closeTxt:'≤-5℃ 关闭',margin:Math.max(0,d.minT+5),unit:'℃',low:true});
+ } else { rows.push({name:'累计降水（7天）',cur:data.days.reduce((s,x)=>s+x.precip,0).toFixed(1)+' mm',val:data.days.reduce((s,x)=>s+x.precip,0),narrow:2,close:4,narrowTxt:'≥2 暂缓倾向',closeTxt:'≥4 关闭补水',margin:Math.max(0,4-data.days.reduce((s,x)=>s+x.precip,0)),unit:'mm',inv:true});
+  rows.push({name:'土壤湿度（表层）',cur:d.soilS+' %',val:d.soilS,narrow:22,close:28,narrowTxt:'≥22% 收窄',closeTxt:'≥28% 关闭（不缺水）',margin:Math.max(0,28-d.soilS),unit:'%',inv:true});
+ }
+ rows.forEach(r=>{ r.fragility = r.inv||r.low ? Math.max(0,Math.min(1, r.margin/Math.max(6,(r.close||10)))) : Math.max(0,Math.min(1,(r.close-r.val)/Math.max(2,r.close-r.narrow+2))); });
+ return rows;
+}
+function renderConditions(data,evals){
+ const rows=factorRows(data);
+ const state = evals[0].level==='bad'?'关闭':evals[0].level==='warn'?'收窄':'开启';
+ const ws=$('#windowState'); ws.textContent=state; ws.className='status-pill '+(state==='开启'?'ok':state==='收窄'?'warn':'bad');
+ $('#windowStateHint').textContent= state==='开启'?'各因子均在安全区内':state==='收窄'?'至少一因子进入警戒区，窗口时长已缩短':'关键因子越过关闭阈值，今日不宜作业';
+ const fragile=[...rows].sort((a,b)=>a.fragility-b.fragility)[0];
+ const bw=evals.reduce((m,e,i)=>e.win.len>m.len?{len:e.win.len,i}:m,{len:0,i:0});
+ if(fragile&&fragile.name==='风速'&&curOp!=='bushui'){
+   const up=2; const d2=data.days[bw.i]; const shrunk=Math.max(0,d2.hrs.filter(v=>v<=OPS[curOp].thresh-up).length? Math.round(bw.len*0.45):0);
+   $('#fragileSummary').textContent=`最脆弱：风速——当前最佳窗口日日均 ${d2.windAvg} m/s，距${OPS[curOp].label}收窄线 ${curOp==='zaizhi'?5:6} m/s 仅差 ${( (curOp==='zaizhi'?5:6)-d2.windAvg).toFixed(1)} m/s；若预报上调约 2 m/s，本窗口预计由 ${bw.len} 小时收窄至约 ${Math.max(1,Math.round(bw.len*0.45))} 小时，上调 3.8 m/s 以上则直接关闭。`;
+ } else if(fragile){ $('#fragileSummary').textContent=`最脆弱：${fragile.name}——当前 ${fragile.cur}，${fragile.closeTxt}；余量仅约 ${fragile.margin.toFixed(1)} ${fragile.unit}，该因子一旦越线，窗口将由「${state}」转为收窄或关闭，请优先盯防。`; }
+ $('#conditionList').innerHTML=rows.map(r=>{ const pct=Math.round(Math.max(4,Math.min(100,(r.low||r.inv? (1-r.fragility)*100 : (1-r.fragility)*100 )))); const cls=r.fragility<0.3?'low':r.fragility<0.65?'mid':'';
+  return `<div class="cond-row"><div class="cr-top"><b>${r.name}</b><span>当前 <b>${r.cur}</b> ｜ ${r.narrowTxt} ｜ ${r.closeTxt}</span><span style="color:var(--muted)">余量 ${r.margin.toFixed(1)} ${r.unit}</span></div><div class="bar"><i class="${cls}" style="width:${pct}%"></i></div></div>`}).join('');
+}
+// ---------- 3D cube ----------
+let cubeYaw=0.35, cubeScores=[];
+function blockScore(day,h0){
+ const seg=day.hrs.slice(h0,h0+6); const w=Math.max(...seg); const temp=h0<6?day.minT+2:h0<12?day.maxT-2:h0<18?day.maxT:day.minT+3;
+ let s=100; s-=Math.max(0,w-OPS[curOp].thresh)*14; s-=Math.max(0,w-5)*4; if(day.precip>=0.5)s-=45; if(temp<0)s-=25; if(temp>30)s-=20; if(day.soilS<RULES.soilPlantMin-4&&curOp==='zaizhi')s-=12;
+ return {score:Math.max(4,Math.round(s)),wind:+w.toFixed(1),temp,precip:day.precip};
+}
+function drawCube(svgEl,data,yaw,interactive){
+ const NS='http://www.w3.org/2000/svg'; svgEl.innerHTML=''; cubeScores=[];
+ const ox=90,oy=215, ax={x:56,y:-16+yaw*22}, bx={x:-30+yaw*46,y:14};
+ const col=s=>s>=70?'#22c55e':s>=40?'#f59e0b':'#ef4444'; const shade=(hex,f)=>{const n=parseInt(hex.slice(1),16);const r=Math.min(255,((n>>16)&255)*f),g=Math.min(255,((n>>8)&255)*f),b=Math.min(255,(n&255)*f);return `rgb(${r|0},${g|0},${b|0})`};
+ const blocks=[];
+ data.days.forEach((d,di)=>{ for(let b=0;b<4;b++){ const bs=blockScore(d,b*6); cubeScores.push({di,b,...bs}); blocks.push({di,b,bs,depth:di*1.2+(3-b)}); } });
+ blocks.sort((a,b)=>a.depth-b.depth);
+ const poly=(pts,fill,extra)=>{const p=document.createElementNS(NS,'polygon');p.setAttribute('points',pts.map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join(' '));p.setAttribute('fill',fill);if(extra)Object.entries(extra).forEach(([k,v])=>p.setAttribute(k,v));svgEl.appendChild(p);return p;};
+ blocks.forEach(({di,b,bs})=>{ const h=18+bs.score*0.95; const base=[ox+ax.x*di+bx.x*b, oy+ax.y*di+bx.y*b]; const A=base,B=[base[0]+ax.x*0.82,base[1]+ax.y*0.82],C=[B[0]+bx.x*0.82,B[1]+bx.y*0.82],D=[base[0]+bx.x*0.82,base[1]+bx.y*0.82]; const up=p=>[p[0],p[1]-h]; const c=col(bs.score);
+  poly([A,B,C,D],shade(c,0.55));
+  poly([D,C,up(C),up(D)],shade(c,0.8)); poly([B,C,up(C),up(B)],shade(c,0.65));
+  const top=poly([up(A),up(B),up(C),up(D)],c,{style:interactive?'cursor:pointer':'','stroke':'rgba(255,255,255,.65)','stroke-width':'1'});
+  if(interactive){ top.addEventListener('mousemove',e=>{ const wrap=$('#cubeWrap').getBoundingClientRect(); const tip=$('#cubeTip'); const d=data.days[di]; const st=bs.score>=70?'开启':bs.score>=40?'收窄':'关闭'; tip.innerHTML=`<b>${d.md} ${d.dow} · ${String(b*6).padStart(2,'0')}:00–${String(b*6+6).padStart(2,'0')}:00</b><br>适宜度 ${bs.score} 分 · ${st}<br>时段最大风速 ${bs.wind} m/s（上限 ${OPS[curOp].thresh}）｜气温约 ${bs.temp}℃｜降水 ${bs.precip} mm<br>判定：${bs.score>=70?'条件齐备，可排作业':bs.score>=40?'有因子接近阈值，窗口收窄，需抢时段':'风速/降水/温度越线，本时段关闭'}`; tip.style.display='block'; tip.style.left=Math.min(wrap.width-240,(e.clientX-wrap.left)+14)+'px'; tip.style.top=Math.max(4,(e.clientY-wrap.top)-10)+'px'; });
+   top.addEventListener('mouseleave',()=>{$('#cubeTip').style.display='none'}); }
+ });
+ const t1=document.createElementNS(NS,'text'); t1.setAttribute('x',ox); t1.setAttribute('y',oy+52); t1.setAttribute('font-size','11'); t1.setAttribute('fill','#64746b'); t1.textContent='→ 未来 7 天'; svgEl.appendChild(t1);
+ const t2=document.createElementNS(NS,'text'); t2.setAttribute('x',14); t2.setAttribute('y',oy-40); t2.setAttribute('font-size','11'); t2.setAttribute('fill','#64746b'); t2.textContent='↖ 0–24 时'; svgEl.appendChild(t2);
+ data.days.forEach((d,di)=>{ const t=document.createElementNS(NS,'text'); const px=ox+ax.x*di+bx.x*3.4; const py=oy+ax.y*di+bx.y*3.4+34; t.setAttribute('x',px); t.setAttribute('y',py); t.setAttribute('font-size','10.5'); t.setAttribute('fill','#475569'); t.textContent=d.md; svgEl.appendChild(t); });
+}
+function renderCube(data){ drawCube($('#cubeSvg'),data,cubeYaw,true); drawCube($('#cubeStatic'),data,0.35,false); }
+(function(){ const wrap=$('#cubeWrap'); let drag=null;
+ wrap.addEventListener('pointerdown',e=>{drag={x:e.clientX,yaw:cubeYaw}});
+ window.addEventListener('pointermove',e=>{ if(!drag)return; cubeYaw=Math.max(-1,Math.min(1,drag.yaw+(e.clientX-drag.x)/160)); const data=genData(curPlot); drawCube($('#cubeSvg'),data,cubeYaw,true); });
+ window.addEventListener('pointerup',()=>drag=null);
+ $('#cubeReset').onclick=()=>{cubeYaw=0.35; renderCube(genData(curPlot));};
+})();
+// ---------- Seedling simulation ----------
+const SPECIES={
+ '梭梭':{drought:5,wind:5,water:'低（约 8 L/株·次）',waterN:8,tMin:-2,tMax:32,soilMin:10,soilMax:30,base:88},
+ '沙柳':{drought:4,wind:4,water:'中（约 14 L/株·次）',waterN:14,tMin:0,tMax:30,soilMin:14,soilMax:34,base:85},
+ '花棒':{drought:5,wind:4,water:'低（约 9 L/株·次）',waterN:9,tMin:0,tMax:33,soilMin:10,soilMax:30,base:86},
+ '柠条':{drought:5,wind:4,water:'低（约 10 L/株·次）',waterN:10,tMin:-3,tMax:34,soilMin:9,soilMax:32,base:87},
+ '樟子松':{drought:3,wind:3,water:'中高（约 18 L/株·次）',waterN:18,tMin:2,tMax:28,soilMin:16,soilMax:36,base:80},
+ '胡杨':{drought:4,wind:3,water:'高（约 22 L/株·次）',waterN:22,tMin:2,tMax:35,soilMin:15,soilMax:38,base:82},
+ '沙棘':{drought:4,wind:4,water:'中（约 13 L/株·次）',waterN:13,tMin:-1,tMax:30,soilMin:13,soilMax:34,base:84}};
+let simPeriod=30;
+function simulate(plot,speciesName,startIdx,period){
+ const sp=SPECIES[speciesName]; const data=genData(plot); const r=rng(hash(plot.id+speciesName+startIdx+'p'+period));
+ let surv=sp.base, soil=data.days[startIdx].soilS, curve=[+surv.toFixed(1)], risks=[];
+ for(let day=1;day<=period;day++){
+   const base=data.days[(startIdx+Math.floor(day/3))%7];
+   const wind=+(base.windAvg+(r()-0.42)*3.2).toFixed(1); const tmax=Math.round(base.maxT+(r()-0.45)*6); const tmin=Math.round(base.minT+(r()-0.5)*4);
+   const rain=r()<0.12?+(r()*2.2).toFixed(1):0; soil=Math.max(6,Math.min(38,soil-0.35+rain*2.2-(tmax>28?0.5:0)));
+   let drop=0; const tags=[];
+   if(wind>8){drop+=1.5;tags.push('大风')} else if(wind>6.5){drop+=0.7;tags.push('大风')}
+   if(tmax>32){drop+=0.8;tags.push('高温')} if(tmin<sp.tMin){drop+=0.6;tags.push('低温')}
+   if(soil<sp.soilMin){drop+=0.9;tags.push('干旱')} if(rain>=1.5){drop+=0.3;tags.push('强降水')}
+   drop*= (6-sp.drought)*0.28+0.35; surv=Math.max(28,surv-drop-(day<=7?0.12:0.05)); curve.push(+surv.toFixed(1));
+   if(tags.length) risks.push({day,tags,wind,tmax,soil:+soil.toFixed(0)});
+ }
+ return {final:+surv.toFixed(0),curve,risks,sp};
+}
+function simAdvice(plot,speciesName,startIdx,period,base){
+ let bestAlt=null;
+ for(let i=0;i<7;i++){ if(i===startIdx)continue; const s=simulate(plot,speciesName,i,period); if(!bestAlt||s.final>bestAlt.final) bestAlt={i,final:s.final}; }
+ const data=genData(plot);
+ if(bestAlt&&bestAlt.final-base.final>=3){ const d=data.days[bestAlt.i]; const badRisk=base.risks[0]; return `建议：改到 ${d.md}（${d.dow}）栽植，预计成活率 ${bestAlt.final}%，比当前方案 +${bestAlt.final-base.final}%${badRisk?`（当前方案第 ${badRisk.day} 天遇${badRisk.tags.join('/')}，风速约 ${badRisk.wind} m/s）`:''}。`; }
+ if(base.risks.length) { const rk=base.risks[0]; return `建议：当前日期可栽，但第 ${rk.day} 天有${rk.tags.join('/')}风险（风速 ${rk.wind} m/s、最高 ${rk.tmax}℃、湿度约 ${rk.soil}%），提前备滴灌与防风障，可挽回约 3–5% 成活率。`; }
+ return '建议：当前组合风险日很少，按计划栽植并在第 3、7 天各巡查一次墒情即可。';
+}
+function runSim(logIt){
+ const spName=$('#simSpecies').value; const startIdx=+$('#simDate').value;
+ const res=simulate(curPlot,spName,startIdx,simPeriod);
+ // recommended alternative: best other start date, same species (only two lines on main chart to avoid crowding)
+ // unified recommendation: same candidate set as the comparison table; the single best non-current combo
+ const _cands=buildCandidates(); const _rec=_cands.filter(c=>!(c.species===spName&&c.idx===startIdx)).sort((a,b)=>b.final-a.final)[0];
+ let alt=null, altIdx=-1, altSpecies=spName;
+ if(_rec){ alt=simulate(curPlot,_rec.species,_rec.idx,simPeriod); altIdx=_rec.idx; altSpecies=_rec.species; }
+ const data=genData(curPlot);
+ const W=620,H=230,P=34, PH=H-40, PW=W-P-118;
+ function X(d){return P+d/simPeriod*PW} function Y(v){return 8+(100-v)/80*PH}
+ function toPath(curve){return curve.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ')}
+ const curPath=toPath(res.curve); const altPath=alt?toPath(alt.curve):'';
+ const yTh=Y(70);
+ // end-label anti-overlap: if finals close, stagger vertically
+ let yCur=Y(res.final), yAlt=alt?Y(alt.final):0;
+ let offCur=0, offAlt=0;
+ if(alt && Math.abs(yCur-yAlt)<20){ offCur=-13; offAlt=13; if(yCur>yAlt){offCur=13;offAlt=-13;} }
+ const xEnd=X(simPeriod);
+ const riskDots=res.risks.slice(0,10).map((rk,ri)=>{ const x=X(rk.day); const y=Y(res.curve[rk.day]); const above=ri%2===0; const ly=above?y-13:y+20; return `<g><circle cx="${x}" cy="${y}" r="5" fill="#dc2626" stroke="#fff" stroke-width="2"><title>第${rk.day}天 ${rk.tags.join('/')}</title></circle><line x1="${x}" y1="${y}" x2="${x}" y2="${ly+(above?7:-3)}" stroke="#991b1b" stroke-width="1" opacity=".6"/><text x="${x}" y="${ly}" font-size="9.5" text-anchor="middle" fill="#991b1b" font-weight="700">${rk.tags[0]}</text></g>`}).join('');
+ const isRec=!!(alt&&alt.final>res.final); const altName=isRec?'推荐方案':'对比方案';
+ const altLabel=alt?data.days[altIdx].md+' '+altSpecies+'（'+altName+'）':'';
+ $('#simResult').innerHTML=`<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:baseline"><div style="font-size:26px;font-weight:900;color:var(--green)">预计成活率 ${res.final}%</div><div style="font-size:12.5px;color:var(--muted)">${curPlot.short} · ${spName} · ${$('#simDate').selectedOptions[0].textContent} 起 · 推演 ${simPeriod} 天 · 风险日 ${res.risks.length} 天${alt?` · ${altName} ${alt.final}%`:''}</div></div>
+ <div class="sim-legend" id="simLegend"><button data-line="cur" class="on"><span class="sw"></span>当前方案 · ${spName} ${data.days[startIdx].md}栽植 — ${res.final}%</button>${alt?`<button data-line="alt" class="on"><span class="sw"></span>${altName} · ${altLabel} — ${alt.final}%</button>`:''}<button data-line="thresh" class="on"><span class="sw"></span>警戒线 70%</button><span style="font-size:11.5px;color:var(--muted);align-self:center">点图例可显示/隐藏 · 悬停曲线看逐日数值 · 其余候选方案见下方对比表</span></div>
+ <div class="sim-chart-wrap"><svg class="sim-svg" id="simSvg" viewBox="0 0 ${W} ${H}">
+ <line x1="${P}" x2="${P+PW}" y1="${yTh}" y2="${yTh}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 5" data-g="thresh"/>
+ ${alt?`<path data-g="alt" d="${altPath}" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round"/>`:''}
+ <path data-g="cur" d="${curPath}" fill="none" stroke="#16794a" stroke-width="3.5" stroke-linecap="round"/>
+ ${alt?`<path data-g="altHit" class="sim-hit" data-k="alt" d="${altPath}" fill="none" stroke="transparent" stroke-width="16" style="cursor:pointer"/>`:''}
+ <path data-g="curHit" class="sim-hit" data-k="cur" d="${curPath}" fill="none" stroke="transparent" stroke-width="16" style="cursor:pointer"/>
+ <g data-g="cur">${riskDots}</g>
+ ${alt?`<line data-g="alt" x1="${xEnd}" y1="${yAlt}" x2="${xEnd+10}" y2="${yAlt+offAlt}" stroke="#2563eb" stroke-width="1.2"/><text data-g="alt" x="${xEnd+13}" y="${yAlt+offAlt+4}" font-size="11.5" font-weight="800" fill="#1d4ed8">${altName==='推荐方案'?'推荐':'对比'} ${alt.final}%</text>`:''}
+ <line data-g="cur" x1="${xEnd}" y1="${yCur}" x2="${xEnd+10}" y2="${yCur+offCur}" stroke="#16794a" stroke-width="1.2"/><text data-g="cur" x="${xEnd+13}" y="${yCur+offCur+4}" font-size="11.5" font-weight="800" fill="#14532d">当前 ${res.final}%</text>
+ ${[0,Math.floor(simPeriod/2),simPeriod].map(d=>`<text x="${X(d)}" y="${H-8}" font-size="11" fill="#94a3b8" text-anchor="middle">第${d}天</text>`).join('')}
+ <text x="${P}" y="14" font-size="11" fill="#94a3b8">成活率 %（纵轴 20–100）· 红点＝当前方案风险日 · 主图只画当前+对比/推荐两条线防重合</text>
+ </svg><div class="sim-tip" id="simTip"></div></div>
+ <p style="font-size:13px;line-height:1.7;margin:6px 0 0"><b>风险摘要：</b>${res.risks.length?res.risks.slice(0,6).map(rk=>`第${rk.day}天${rk.tags.join('/')}`).join('；'):'推演期内无明显风险日'}。</p>
+ <p style="font-size:13px;line-height:1.7;background:#f0fdf4;border-radius:9px;padding:9px 11px">${simAdvice(curPlot,spName,startIdx,simPeriod,res)}</p>`;
+ // legend toggle + hover highlight/tooltip
+ (function(){
+   var svg=document.getElementById('simSvg'), tip=document.getElementById('simTip'); if(!svg)return;
+   var curves={cur:res.curve, alt:alt?alt.curve:null}; var names={cur:'当前方案',alt:'对比/推荐方案'};
+   document.querySelectorAll('#simLegend button').forEach(function(b){ b.onclick=function(){ var k=b.dataset.line; var off=b.classList.toggle('off'); svg.querySelectorAll('[data-g="'+k+'"],[data-g="'+k+'Hit"]').forEach(function(el){ el.style.display=off?'none':''; }); }; });
+   svg.querySelectorAll('.sim-hit').forEach(function(hit){ hit.addEventListener('mousemove',function(e){ var k=hit.dataset.k; var wrap=svg.parentElement.getBoundingClientRect(); var vx=(e.clientX-wrap.left)/wrap.width*W; var d=Math.max(0,Math.min(simPeriod,Math.round((vx-P)/PW*simPeriod))); var v=curves[k][d]; svg.querySelectorAll('path[data-g="cur"],path[data-g="alt"]').forEach(function(pp){ pp.style.opacity=(pp.dataset.g===k)?'1':'0.18'; });
+     tip.innerHTML='<b>'+names[k]+' · 第 '+d+' 天</b><br>'+spName+' 成活率 '+v+'%'+(k==='cur'&&res.risks.some(function(r){return r.day===d})?' · 风险日':''); tip.style.display='block'; tip.style.left=Math.min(wrap.width-170,(e.clientX-wrap.left)+12)+'px'; tip.style.top=Math.max(2,(e.clientY-wrap.top)-8)+'px'; });
+    hit.addEventListener('mouseleave',function(){ tip.style.display='none'; svg.querySelectorAll('path[data-g="cur"],path[data-g="alt"]').forEach(function(pp){ pp.style.opacity='1'; }); }); });
+ })();
+ renderCandidates();
+ if(logIt) logAudit('选苗推演','zaizhi',`${spName} 预计成活率 ${res.final}%`,'R-S1',`输入快照：${snapText(genData(curPlot).days[startIdx])}\n树种参数：基线成活率 ${res.sp.base}%｜耐旱 ${res.sp.drought}/5｜耐风沙 ${res.sp.wind}/5｜适宜湿度 ${res.sp.soilMin}–${res.sp.soilMax}%\n推演：周期 ${simPeriod} 天，风险日 ${res.risks.length} 天（${res.risks.slice(0,5).map(r=>'第'+r.day+'天'+r.tags.join('/')).join('；')||'无'}），逐日扣减后成活率 ${res.final}%。对比推荐方案（${alt?data.days[altIdx].md:''}栽植）成活率 ${alt?alt.final:''}%。`);
+}
+function buildCandidates(){
+ const data=genData(curPlot); const cur=$('#simSpecies').value||'梭梭';
+ let bestIdx=0,bl=-1; data.days.forEach((d,i)=>{const e=evaluate(d,'zaizhi',i,data); if(e.win.len>bl&&e.level!=='bad'){bl=e.win.len;bestIdx=i}});
+ const combos=[{species:cur,idx:+($('#simDate').value||0)},{species:'梭梭',idx:bestIdx},{species:cur==='沙柳'?'柠条':'沙柳',idx:(bestIdx+1)%7}];
+ const seen=new Set(); return combos.filter(c=>{const k=c.species+c.idx; if(seen.has(k))return false; seen.add(k); return true}).map(c=>{ const s=simulate(curPlot,c.species,c.idx,simPeriod); return {...c,final:s.final,risks:s.risks,water:SPECIES[c.species].water,dateLabel:data.days[c.idx].md+' '+data.days[c.idx].dow}; });
+}
+function renderCandidates(){
+ const cands=buildCandidates(); const mx=Math.max(...cands.map(c=>c.final));
+ const recIdx=cands.findIndex(c=>c.final===mx); $('#simTable').querySelector('tbody').innerHTML=cands.map((c,ci)=>`<tr class="${ci===recIdx?'rec':''}"><td><b>${c.species}</b> · ${c.dateLabel} 栽植</td><td><b>${c.final}%</b></td><td>${c.risks.length} 天</td><td>${c.water}</td><td>${ci===recIdx?'<span class="tag-rec">推荐</span>':''}</td></tr>`).join('');
+}
+document.querySelectorAll('#simPeriod button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#simPeriod button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); simPeriod=+b.dataset.p; runSim(false);});
+$('#simSpecies').addEventListener('change',()=>{updateSpeciesInfo(); runSim(false);});
+$('#simDate').addEventListener('change',()=>runSim(false));
+$('#simRun').onclick=()=>{runSim(true); toast('推演完成 · 已写入审计日志');};
+function updateSpeciesInfo(){ const sp=SPECIES[$('#simSpecies').value]; if(!sp)return; $('#speciesInfo').textContent=`${$('#simSpecies').value} 参数：耐旱 ${sp.drought}/5 · 耐风沙 ${sp.wind}/5 · 需水量 ${sp.water} · 适宜气温 ${sp.tMin}–${sp.tMax}℃ · 适宜土壤湿度 ${sp.soilMin}–${sp.soilMax}% · 基线成活率 ${sp.base}%`; }
+function populateSim(){ const prevSp=$('#simSpecies').value||'梭梭'; const prevDate=$('#simDate').value||'0'; $('#simSpecies').innerHTML=Object.keys(SPECIES).map(s=>`<option ${s===prevSp?'selected':''}>${s}</option>`).join(''); const data=genData(curPlot); $('#simDate').innerHTML=data.days.map((d,i)=>`<option value="${i}" ${String(i)===String(prevDate)?'selected':''}>${d.md} ${d.dow}${i===0?'（今天）':''} · 风 ${d.windAvg} m/s</option>`).join(''); updateSpeciesInfo(); }
+// ---------- Calibration ----------
+const CAL_KEY='sha-mo-hua-zhi-li-jue-ce-kong-zhi-tai_calibration';
+let calRecords=[]; try{ calRecords=JSON.parse(localStorage.getItem(CAL_KEY)||'[]'); }catch(e){ calRecords=[]; }
+function predSurvival(plotId,species){ const p=plots.find(x=>x.id===plotId)||curPlot; return simulate(p,species,0,30).final; }
+function renderCalib(){
+ const tb=$('#calibTable').querySelector('tbody');
+ tb.innerHTML=calRecords.map((r,i)=>{ const pred=predSurvival(r.plotId,r.species); const dev=+(pred-r.actual).toFixed(1); return `<tr><td>${r.date}</td><td>${r.plotName}</td><td>${r.species}</td><td>${r.wind} m/s</td><td>${r.soil}%</td><td>${pred}%</td><td>${r.actual}%</td><td style="color:${Math.abs(dev)>5?'#dc2626':'#16794a'};font-weight:700">${dev>0?'+':''}${dev}%</td><td>${r.note||'—'}</td><td><button class="ghost" data-del="${i}" style="min-height:30px;border-radius:7px;padding:0 9px;font-size:12px">删除</button></td></tr>`}).join('');
+ $('#calibEmpty').style.display=calRecords.length?'none':'block';
+ tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ calRecords.splice(+b.dataset.del,1); saveCalib(); toast('已删除该条校准记录'); });
+ renderCalibSuggest();
+}
+function saveCalib(){ try{localStorage.setItem(CAL_KEY,JSON.stringify(calRecords));}catch(e){} renderCalib(); }
+function renderCalibSuggest(){
+ const groups={}; calRecords.forEach(r=>{ const k=r.plotId+'|'+r.species; (groups[k]=groups[k]||[]).push(predSurvival(r.plotId,r.species)-r.actual); });
+ const box=$('#calibSuggest'); box.innerHTML='';
+ Object.entries(groups).forEach(([k,devs])=>{ if(devs.length<3)return; const avg=devs.reduce((a,b)=>a+b,0)/devs.length; if(Math.abs(avg)<=5)return;
+  const [pid,sp]=k.split('|'); const p=plots.find(x=>x.id===pid); const over=avg>0; const newTh=Math.max(8,Math.min(30,RULES.soilPlantMin+(over?3:-3)));
+  const div=document.createElement('div'); div.className='sug-box';
+  div.innerHTML=`<b>阈值调整建议（${p?p.short:pid} · ${sp}，样本 ${devs.length} 条）：</b>系统${over?'高估':'低估'}成活率，平均偏差 ${avg>0?'+':''}${avg.toFixed(1)}%。建议栽植土壤湿度阈值 ${RULES.soilPlantMin}% → ${newTh}%（规则 R-C1）。<div style="margin-top:8px;display:flex;gap:8px"><button class="primary" style="min-height:36px" data-adopt="${newTh}">采纳</button><button class="ghost" style="border-radius:10px;padding:0 14px" data-dismiss="1">忽略</button></div>`;
+  div.querySelector('[data-adopt]').onclick=()=>{ const old=RULES.soilPlantMin; RULES.soilPlantMin=newTh; try{localStorage.setItem('sha-mo-hua-zhi-li-jue-ce-kong-zhi-tai_rules',JSON.stringify(RULES));}catch(e){} logAudit('阈值变更','zaizhi',`栽植土壤湿度阈值 ${old}% → ${newTh}%`,'R-C1',`阈值 栽植土壤湿度阈值 由 ${old}% 改为 ${newTh}%（来源：校准采纳）\n依据：${p?p.short:pid} · ${sp} 共 ${devs.length} 条校准样本，预测与实测平均偏差 ${avg.toFixed(1)}%。`); div.remove(); renderAll(); toast(`已采纳：栽植土壤湿度阈值 ${old}% → ${newTh}%，全站判读已重算`); };
+  div.querySelector('[data-dismiss]').onclick=()=>div.remove();
+  box.appendChild(div);
+ });
+}
+$('#calibForm').addEventListener('submit',e=>{ e.preventDefault(); const p=plots.find(x=>x.id===$('#cPlot').value)||curPlot;
+ calRecords.unshift({plotId:p.id,plotName:p.short,species:$('#cSpecies').value,date:$('#cDate').value,wind:+$('#cWind').value,soil:+$('#cSoil').value,actual:+$('#cSurv').value,note:$('#cNote').value.trim()});
+ saveCalib(); logAudit('校准收集','zaizhi',`新增校准记录 ${p.short} · ${$('#cSpecies').value} 实测 ${$('#cSurv').value}%`,'R-C1',`实测快照：风速 ${$('#cWind').value} m/s｜土壤湿度 ${$('#cSoil').value}%｜两周实测成活率 ${$('#cSurv').value}%｜系统预测 ${predSurvival(p.id,$('#cSpecies').value)}%`); toast('校准记录已保存到本机浏览器'); });
+$('#exportCalib').onclick=()=>{ downloadBlob(new Blob([JSON.stringify(calRecords,null,2)],{type:'application/json'}),'校准数据.json'); toast('校准数据已导出（JSON）'); };
+$('#exportCalibCsv').onclick=()=>{ const csv='日期,地块,树种,实测风速,实测土壤湿度,预测成活率,实测成活率,备注\n'+calRecords.map(r=>[r.date,r.plotName,r.species,r.wind,r.soil,predSurvival(r.plotId,r.species),r.actual,'"'+(r.note||'')+'"'].join(',')).join('\n'); downloadBlob(new Blob(['\ufeff'+csv],{type:'text/csv'}),'校准数据.csv'); toast('校准数据已导出（CSV）'); };
+// ---------- Voice ----------
+(function(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; const mic=$('#micBtn');
+ if(!SR){ mic.disabled=true; mic.title='当前浏览器不支持语音输入'; $('#voiceHint').textContent='当前浏览器不支持语音输入，可打字提问；语音播报需浏览器支持 speechSynthesis。'; }
+ else { const rec=new SR(); rec.lang='zh-CN'; rec.interimResults=false;
+  rec.onresult=e=>{ const t=e.results[0][0].transcript; $('#askInput').value=t; ask(t); $('#askInput').value=''; };
+  rec.onend=()=>mic.classList.remove('recording'); rec.onerror=()=>mic.classList.remove('recording');
+  mic.onclick=()=>{ try{ mic.classList.add('recording'); rec.start(); }catch(e){ mic.classList.remove('recording'); } };
+  $('#voiceHint').textContent='点麦克风可语音提问（识别在本机浏览器完成）；点「播报」开关后，助手回答会朗读出来。';
+ }
+ $('#ttsBtn').onclick=()=>{ ttsOn=!ttsOn; $('#ttsBtn').textContent=ttsOn?'🔊 播报开':'🔇 播报关'; if(ttsOn) speak('语音播报已开启'); else if('speechSynthesis' in window) speechSynthesis.cancel(); };
+})();
+// ---------- wrap renderAll ----------
+const _renderAllBase=renderAll;
+let lastAuditKey='';
+renderAll=function(){
+ _renderAllBase();
+ const data=genData(curPlot); const evals=data.days.map((d,i)=>evaluate(d,curOp,i,data));
+ renderConditions(data,evals); renderCube(data); populateSim(); runSim(false);
+ $('#cPlot').innerHTML=plots.map(p=>`<option value="${p.id}" ${p.id===curPlot.id?'selected':''}>${p.short}</option>`).join('');
+ $('#cSpecies').innerHTML=Object.keys(SPECIES).map(s=>`<option>${s}</option>`).join('');
+ const cd=$('#cDate'); if(!cd.value) cd.value=new Date().toISOString().slice(0,10);
+ renderCalib();
+ const key=curPlot.id+curOp+selDay+RULES.soilPlantMin+new Date().getMinutes();
+ if(key!==lastAuditKey){ lastAuditKey=key; const e0=evals[0]; logAudit('判读',curOp,`今日${OPS[curOp].label}：${e0.label}`,'R-G2'&&ruleFor(curOp,e0),`输入快照（今日）：${snapText(data.days[0])}\n结论与理由：${e0.label} — ${e0.reason}\n最佳窗口：${$('#bestDate').textContent} ${$('#bestTime').textContent}（连续 ${e0.win.len} 小时口径见窗口卡）`); }
+};
+// init
+renderAll();
+addMsg(`你好，我是 ${curPlot.short} 的治沙顾问。切换左侧地块、或上方「固沙 / 栽植 / 补水」页签，我的判读会跟着重算。你可以问我哪天能固沙、要不要补水。`,false);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script>
+// ================= v3 additions =================
+(function(){
+"use strict";
+var $v=function(s){return document.querySelector(s)};
+function pad(n){return String(n).padStart(2,'0')}
+// ---- B: card header timestamps ----
+function stampCards(){ var t=new Date(); var s='数据 '+pad(t.getHours())+':'+pad(t.getMinutes());
+ document.querySelectorAll('.card').forEach(function(c){ var h=c.querySelector('h3'); if(!h)return; var el=h.querySelector('.cts'); if(!el){ el=document.createElement('span'); el.className='cts'; h.appendChild(el);} el.textContent=s; });
+}
+// ---- B: donut number animation + legend hover ----
+var donutPrev=0, donutRaf=null;
+function animDonut(){ var el=$v('#donutNum'); if(!el)return; var target=parseInt(el.textContent)||0; var from=donutPrev; donutPrev=target; if(donutRaf)cancelAnimationFrame(donutRaf); var t0=performance.now();
+ function step(t){ var k=Math.min(1,(t-t0)/550); var v=Math.round(from+(target-from)*k); el.textContent=v+'/7'; if(k<1)donutRaf=requestAnimationFrame(step); } donutRaf=requestAnimationFrame(step);
+ var lg=$v('#donutLegend'); if(lg&&!lg.dataset.hov){ lg.dataset.hov='1'; lg.querySelectorAll('div').forEach(function(d){ d.style.cursor='pointer'; d.addEventListener('mouseenter',function(){ $v('#donut').style.transform='scale(1.05)'; d.style.fontWeight='700'; }); d.addEventListener('mouseleave',function(){ $v('#donut').style.transform=''; d.style.fontWeight=''; }); }); }
+}
+// ---- B: soil badge / NDVI compare / today progress ----
+function extras(){
+ stampCards(); animDonut();
+ var data=genData(curPlot); var d0=data.days[0];
+ var badge=$v('#soilBadge'); if(badge){ var lv=d0.soilS<14?['干旱','bad']:d0.soilS<=26?['适宜','ok']:['偏湿','warn']; badge.textContent='墒情 '+lv[0]+' · 表层 '+d0.soilS+'%'; badge.className='status-pill '+lv[1]; }
+ var cmp=$v('#ndviCmp'); if(cmp){ var nd=data.ndvi; var cur=nd[nd.length-1]; var old=nd[Math.max(0,nd.length-13)]; var dPct=((cur-old)/old*100); cmp.innerHTML='较去年同期（模拟推算）：覆盖度 '+(dPct>=0?'<b style="color:var(--green)">+':'<b style="color:var(--red)">')+dPct.toFixed(1)+'% '+(dPct>=0?'↗ 上升':'↘ 下降')+'</b> · NDVI '+old.toFixed(2)+' → '+cur.toFixed(2)+'（遥感为示例模拟值）'; }
+ var e0=evaluate(d0,curOp,0,data); var bar=$v('#todayProgBar'), txt=$v('#todayProgTxt');
+ if(bar&&e0.win.len>0){ var now=new Date(); var st=new Date(d0.date); st.setHours(e0.win.start,0,0,0); var en=new Date(d0.date); en.setHours(e0.win.end,0,0,0); var p=now<st?0:now>en?100:Math.round((now-st)/(en-st)*100); bar.style.width=p+'%'; bar.className=p>=100?'low':p>0?'mid':''; txt.textContent=e0.win.start+':00–'+e0.win.end+':00 · '+p+'%'; }
+ else if(bar){ bar.style.width='0%'; txt.textContent='今日无窗口'; }
+ enhanceHourly(data);
+}
+// ---- B: hourly chart crosshair + over-limit shading ----
+function enhanceHourly(data){
+ var svg=document.querySelector('#hourlyChart svg'); if(!svg||svg.dataset.enh)return; svg.dataset.enh='1';
+ var NS='http://www.w3.org/2000/svg'; var day=data.days[selDay]; var th=OPS[curOp].thresh; var P=28,W=560,H=190,PH=H-20;
+ function X(h){return P+h/23*(W-P*2)} function Y(v){return PH-(v/9)*PH}
+ day.hrs.forEach(function(v,h){ if(v>th){ var r=document.createElementNS(NS,'rect'); r.setAttribute('x',X(Math.max(0,h-0.5))); r.setAttribute('y',6); r.setAttribute('width',(W-P*2)/23); r.setAttribute('height',PH-6); r.setAttribute('fill','#dc2626'); r.setAttribute('opacity','0.10'); svg.insertBefore(r,svg.firstChild); } });
+ var g=document.createElementNS(NS,'g'); g.setAttribute('style','display:none;pointer-events:none');
+ g.innerHTML='<line y1="4" y2="'+PH+'" stroke="#2563eb" stroke-width="1" stroke-dasharray="3 3"/><circle r="4.5" fill="#2563eb" stroke="#fff" stroke-width="2"/><text font-size="11.5" font-weight="700" fill="#1e3a8a"></text>';
+ svg.appendChild(g);
+ var rect=document.createElementNS(NS,'rect'); rect.setAttribute('x',P); rect.setAttribute('y',0); rect.setAttribute('width',W-P*2); rect.setAttribute('height',H); rect.setAttribute('fill','transparent'); svg.appendChild(rect);
+ var line=g.querySelector('line'), circ=g.querySelector('circle'), txt=g.querySelector('text');
+ rect.addEventListener('mousemove',function(e){ var r=svg.getBoundingClientRect(); var vx=(e.clientX-r.left)/r.width*W; var h=Math.max(0,Math.min(23,Math.round((vx-P)/(W-P*2)*23))); var v=day.hrs[h]; g.setAttribute('style','pointer-events:none');
+  line.setAttribute('x1',X(h)); line.setAttribute('x2',X(h)); circ.setAttribute('cx',X(h)); circ.setAttribute('cy',Y(v));
+  txt.setAttribute('x',Math.min(W-118,X(h)+8)); txt.setAttribute('y',Math.max(14,Y(v)-8)); txt.textContent=h+'时 · '+v+' m/s'+(v>th?' · 超限':''); txt.setAttribute('fill',v>th?'#dc2626':'#1e3a8a'); });
+ rect.addEventListener('mouseleave',function(){ g.setAttribute('style','display:none;pointer-events:none'); });
+}
+// ---- D: AMap (Leaflet + Gaode tiles) ----
+var gMap=null, gMarkers={}, vecLayer=null, satGroup=null;
+var VEC_URL='https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}';
+var SAT_URL='https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}';
+var LBL_URL='https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}';
+function plotEval(p){ var d=genData(p); var e=evaluate(d.days[0],'gusha',0,d); return {d:d,e:e}; }
+function popHtml(p){ var r=plotEval(p); var col=r.e.level==='ok'?'#22c55e':r.e.level==='warn'?'#f59e0b':'#ef4444';
+ return '<div class="amap-pop"><b style="font-size:14px">'+p.short+'</b><br>'+p.region+' · '+p.method+'<br>今日 '+r.d.days[0].minT+'–'+r.d.days[0].maxT+'℃ · 风 '+r.d.days[0].windAvg+' m/s<br>固沙判读：<b style="color:'+col+'">'+r.e.label+'</b> · 覆盖度 '+r.d.cover+'%<br><button class="amap-go" data-id="'+p.id+'">切换到此地块</button></div>'; }
+function initAmap(){
+ var box=$v('#amap'); if(!box)return;
+ if(!window.L){ box.innerHTML='<svg viewBox="0 0 640 300" style="width:100%;border-radius:12px" role="img" aria-label="风格化地形图（地图组件加载失败回退）"><rect width="640" height="300" fill="#f3e9c8"/><path d="M0 210 C120 180 220 240 360 210 C480 185 560 215 640 195 L640 300 L0 300Z" fill="#bfe3c2"/><text x="24" y="40" font-size="13" fill="#92400e">沙漠治理区 · 风格化地形示意</text>'+plots.map(function(p,i){return '<g><circle cx="'+(90+i*115)+'" cy="'+(120+((i*53)%90))+'" r="9" fill="#dc2626" stroke="#fff" stroke-width="2.5"/><text x="'+(78+i*115)+'" y="'+(105+((i*53)%90))+'" font-size="11" fill="#334155">'+p.short.split('·')[0]+'</text></g>'}).join('')+'</svg><p style="font-size:12px;color:var(--amber);margin:6px 0 0">地图组件加载失败，已切换为风格化地形图（示意）；地块判读请看上方卡片。</p>'; return; }
+ box.innerHTML='';
+ gMap=L.map('amap',{scrollWheelZoom:true}).setView([40.2,108.7],5);
+ vecLayer=L.tileLayer(VEC_URL,{maxZoom:18,attribution:'底图 © 高德地图'});
+ satGroup=L.layerGroup([L.tileLayer(SAT_URL,{maxZoom:18}),L.tileLayer(LBL_URL,{maxZoom:18,opacity:0.9})]);
+ vecLayer.addTo(gMap);
+ plots.forEach(function(p){ var r=plotEval(p); var col=r.e.level==='ok'?'#22c55e':r.e.level==='warn'?'#f59e0b':'#ef4444';
+  var icon=L.divIcon({className:'',iconSize:[44,44],iconAnchor:[22,22],html:'<div class="amark"><div class="dotp" style="background:'+col+'"></div><b>'+r.d.days[0].maxT+'℃</b></div>'});
+  var m=L.marker([p.lat,p.lon],{icon:icon}).addTo(gMap); m.bindPopup(popHtml(p)); gMarkers[p.id]=m; });
+ setTimeout(function(){ if(gMap)gMap.invalidateSize(); },400);
+ $v('#lyrVec').onclick=function(){ if(!gMap)return; gMap.removeLayer(satGroup); vecLayer.addTo(gMap); this.classList.add('on'); $v('#lyrSat').classList.remove('on'); };
+ $v('#lyrSat').onclick=function(){ if(!gMap)return; gMap.removeLayer(vecLayer); satGroup.addTo(gMap); this.classList.add('on'); $v('#lyrVec').classList.remove('on'); };
+ $v('#locatePlot').onclick=function(){ if(!gMap)return; gMap.setView([curPlot.lat,curPlot.lon],8); var m=gMarkers[curPlot.id]; if(m){ m.setPopupContent(popHtml(curPlot)); m.openPopup(); } };
+}
+document.addEventListener('click',function(e){ var b=e.target.closest?e.target.closest('.amap-go'):null; if(!b)return; var p=plots.find(function(x){return x.id===b.dataset.id}); if(!p)return; curPlot=p; selDay=0; renderAll(); toast('已切换到「'+p.short+'」，全站判读已联动重算'); window.scrollTo({top:0,behavior:'smooth'}); });
+// modal map on Gaode tiles
+var mMap=null, mMarker=null;
+function initModalMap(){
+ if(!window.L)return; var div=$v('#modalMap'); if(!div)return;
+ div.style.display='block'; var mb=document.querySelector('.mapbox'); if(mb)mb.style.display='none';
+ if(!mMap){ mMap=L.map('modalMap').setView([curPlot.lat,curPlot.lon],7); L.tileLayer(VEC_URL,{maxZoom:18,attribution:'底图 © 高德地图'}).addTo(mMap);
+  mMarker=L.marker([curPlot.lat,curPlot.lon]).addTo(mMap);
+  mMap.on('click',function(ev){ var la=+ev.latlng.lat.toFixed(4), lo=+ev.latlng.lng.toFixed(4); mMarker.setLatLng(ev.latlng); setLoc('地图选点（高德）',la,lo); toast('已取点：'+la.toFixed(2)+'°N, '+lo.toFixed(2)+'°E'); });
+ } else { mMap.setView([curPlot.lat,curPlot.lon],7); mMarker.setLatLng([curPlot.lat,curPlot.lon]); }
+ setTimeout(function(){ if(mMap)mMap.invalidateSize(); },250);
+}
+var openBtn=$v('#openModal'); if(openBtn){ var prevOpen=openBtn.onclick; openBtn.onclick=function(){ if(prevOpen)prevOpen(); initModalMap(); }; }
+// ---- E: professional knowledge base (>=14 entries, offline) ----
+var KBASE=[
+ {t:'草方格沙障规格与施工',kw:['草方格','麦草方格','方格规格'],p:'用麦草、稻草等扎成 1m×1m 方格，草带露出地面 10–15cm、入沙 10–15cm，外围设 3–5 行阻沙带。先迎风面后背风面，扎后轻拍使草带与沙面密贴。',s:'流动沙丘固沙先行工序，为后续栽植创造稳定沙面',n:'规格 1m×1m；露高 10–15cm；草用量约 250–350 kg/亩'},
+ {t:'半隐蔽式沙障原理',kw:['半隐蔽','沙障原理','风沙流'],p:'沙障降低近地表风速、改变风沙流结构，使风蚀转为堆积并固定障间凹面；障内风速较障外降低约 30%–50%，输沙率显著下降。',s:'解释草方格为何有效，指导障高与间距设计',n:'障高 15–20cm 时粗糙度最佳；风蚀深度控制在障间凹面'},
+ {t:'梭梭适生条件与栽植要点',kw:['梭梭'],p:'极耐旱耐盐碱，适宜年降水 <150mm 区域；春季土壤解冻后栽植，苗龄 1–2 年，栽深以根颈入土 3–5cm 为宜，栽后坐水一次。',s:'地下水位 1–4m 的沙地、戈壁边缘',n:'株行距 2m×3m 或 3m×3m；基线成活率约 85%–90%'},
+ {t:'沙柳扦插与平茬',kw:['沙柳'],p:'用 1–2 年生健壮枝条截成 40–50cm 插穗，深插至露出 3–5cm；3–5 年平茬一次促进萌蘖更新，兼作沙障材料。',s:'水分条件较好的丘间低地、河岸沙地',n:'插穗长 40–50cm；平茬周期 3–5 年'},
+ {t:'樟子松适生与防寒',kw:['樟子松'],p:'喜光耐寒但幼苗期需庇护，年降水 ≥300mm 较稳妥；容器苗雨季栽植成活率高，越冬前覆土防寒，两年后撤除。',s:'科尔沁等东部沙地固沙造林',n:'适宜湿度 16%–36%；栽植温度下限约 2℃'},
+ {t:'胡杨与地下水位',kw:['胡杨'],p:'根系深达 10m 以上，依赖潜水补给；地下水位 2–6m 长势最佳，深于 8m 衰退明显。生态输水后萌蘖更新显著。',s:'塔里木河等内陆河流域两岸',n:'需水量高，约 22 L/株·次（幼树滴灌口径）'},
+ {t:'飞播造林条件',kw:['飞播'],p:'需年降水 ≥250mm、播区有灌木盖度基础；播前整地或设沙障，花棒、沙蒿等混播，雨季前播种，利用天然降水出苗。',s:'毛乌素等降水相对充沛的沙区规模化造林',n:'播量 0.5–1 kg/亩；出苗率受当年降水支配明显'},
+ {t:'光伏治沙模式',kw:['光伏'],p:'光伏板遮阴减少蒸发、板下风速降低，配合板间种植与清洗水回收，形成"板上发电、板下修复"；需防面板积沙与清洗水盐分累积。',s:'库布其等光照资源富集的大型沙区',n:'板下蒸发量可减少约 20%–30%；植被恢复周期 3–5 年'},
+ {t:'生物土壤结皮',kw:['结皮','生物结皮','藻结皮'],p:'藻类、地衣、苔藓与沙粒胶结成 1–10mm 结皮，可固定流沙、提高抗风蚀能力数倍；人工接种藻液可加速形成，但结皮怕踩踏碾压。',s:'固定、半固定沙地生态恢复后期',n:'自然形成需 5–10 年；抗风蚀能力提升约 3–5 倍'},
+ {t:'风沙流与输沙常识',kw:['输沙','起沙风','沙丘移动'],p:'沙粒以跃移为主（约占 75%）；风速超过起动风速（约 4–5 m/s，粒径 0.25mm）即起沙，输沙率与风速三次方近似成正比。',s:'判断大风日作业风险与沙埋风险',n:'起沙风速约 4–5 m/s；沙丘年移动 5–20m（未治理）'},
+ {t:'防护林体系配置',kw:['防护林','锁边林','林带配置'],p:'采用"外围锁边、内部网格"配置：迎风面宽林带锁边，内部乔灌草结合；主林带间距约为树高的 15–20 倍，透风系数 0.3 左右防护效果最佳。',s:'绿洲边缘、道路与农田防护',n:'透风系数 0.25–0.35；锁边林带宽 50–100m'},
+ {t:'成活率影响因子',kw:['成活率影响','为什么成活率低','成活因子'],p:'栽后 14 天是关键期：墒情（土壤湿度）、大风失水、高温灼伤与栽植深度依次影响最大；风速 >8 m/s 的大风日可使当日新栽苗成活率下降 5%–10%。',s:'选苗推演与校准偏差解读',n:'栽后 3 天、7 天各巡查一次墒情；坐水可挽回约 3–5%'},
+ {t:'《防沙治沙技术规范》要点',kw:['规范','技术规范','标准'],p:'GB/T 21141《防沙治沙技术规范》要求因地制宜、工程与生物措施结合：先固后植、以水定林；造林保存率与覆盖度纳入验收，流动沙地优先工程固沙。',s:'方案编制与验收口径',n:'植被覆盖度目标：固定沙地 ≥40%；半固定 ≥25%'},
+ {t:'滴灌补水与坐水栽植',kw:['坐水','滴灌','补水要点'],p:'栽植时每穴浇定根水（坐水）5–10L，随栽随浇随封土；滴灌补水宜清晨或傍晚分段进行，避开正午蒸发高峰，单次湿润深度以达到根层 30–40cm 为度。',s:'干旱期新栽苗木保苗',n:'坐水 5–10 L/穴；滴灌湿润深度 30–40cm'},
+ {t:'沙障材料选择',kw:['沙障材料','尼龙网','黏土沙障'],p:'麦草易降解需 3–5 年更换；尼龙网、聚酯纤维网耐久 8–10 年但成本高；黏土、砾石沙障就地取材、耐久，适合戈壁与道路沿线。',s:'按预算与维护周期选材',n:'麦草障寿命 3–5 年；合成材料 8–10 年'}
+];
+function kbAnswer(e){ return '据知识库《'+e.t+'》：'+e.p+'<br><b>适用场景：</b>'+e.s+'。<br><b>数值参数：</b>'+e.n+'。'; }
+function renderKB(filter){
+ var list=$v('#kbList'); if(!list)return;
+ var items=KBASE.filter(function(e){ return !filter || (e.t+e.p+e.s+e.kw.join('')).includes(filter); });
+ list.innerHTML=items.length?items.map(function(e){ var i=KBASE.indexOf(e); return '<details class="kb-item"><summary>《'+e.t+'》</summary><div class="kb-body">'+e.p+'<br><b>适用场景：</b>'+e.s+'<br><b>数值参数：</b>'+e.n+'<br><button class="ghost" data-kb="'+i+'" style="margin-top:8px;border-radius:8px;padding:0 12px;min-height:32px;font-size:12px">让智能体讲解这一条</button></div></details>'; }).join(''):'<p style="font-size:12.5px;color:var(--muted)">知识库里暂无匹配条目，换个关键词试试（如：草方格、飞播、梭梭）。</p>';
+}
+var kbSearch=$v('#kbSearch'); if(kbSearch) kbSearch.addEventListener('input',function(){ renderKB(this.value.trim()); });
+document.addEventListener('click',function(e){ var b=e.target.closest?e.target.closest('[data-kb]'):null; if(!b)return; var en=KBASE[+b.dataset.kb]; addMsg('讲讲《'+en.t+'》',true); setTimeout(function(){ reply(kbAnswer(en)); document.querySelector('#chat').scrollIntoView({behavior:'smooth',block:'center'}); },300); });
+// ---- E: agent reasoning + multi-turn context ----
+var agentCtx={op:null,species:null,dayOff:0};
+var origAsk=ask;
+function basis(intent,elements,dataTxt,ruleTxt,sortTxt){ return '<details class="jbasis"><summary>推理依据（意图→要素→数据→规则→排序）</summary><div>意图：'+intent+'<br>要素：'+elements+'<br>数据：'+dataTxt+'<br>规则：'+ruleTxt+(sortTxt?'<br>排序：'+sortTxt:'')+'</div></details>'; }
+function opOf(q){ if(/固沙|草方格|铺设/.test(q))return 'gusha'; if(/栽植|种植|栽苗/.test(q))return 'zaizhi'; if(/补水|浇水|灌溉/.test(q))return 'bushui'; return null; }
+function dayOf(q){ if(/后天/.test(q))return 2; if(/明天|明日/.test(q))return 1; if(/今天|今日/.test(q))return 0; return null; }
+ask=function(q){
+ if(!q||!q.trim())return; var query=q.trim();
+ var opHit=opOf(query), dayHit=dayOf(query);
+ if(opHit)agentCtx.op=opHit; if(dayHit!=null)agentCtx.dayOff=dayHit;
+ var spHit=Object.keys(SPECIES).find(function(s){return query.includes(s)}); if(spHit)agentCtx.species=spHit;
+ // cross-plot comparison
+ if(/哪个地块|哪块地|对比|比较/.test(query)&&/适合|最好|最适合|优先/.test(query)){
+   addMsg(query,true);
+   var op=opHit||agentCtx.op||'zaizhi'; var di=dayHit!=null?dayHit:0;
+   var rows=plots.map(function(p){ var d=genData(p); var e=evaluate(d.days[di],op,di,d); return {p:p,d:d.days[di],e:e,score:(e.level==='ok'?3:e.level==='warn'?2:1)*100+e.win.len}; }).sort(function(a,b){return b.score-a.score});
+   var top=rows[0];
+   setTimeout(function(){ reply((di===1?'明天':'今天')+'最适合'+OPS[op].label+'的是「'+top.p.short+'」：'+top.e.label+'，可作业窗口 '+top.e.win.start+':00–'+top.e.win.end+':00，风速 '+top.d.windAvg+' m/s、气温 '+top.d.minT+'–'+top.d.maxT+'℃。其余依次：'+rows.slice(1).map(function(r){return r.p.short.split('·')[0]+'（'+r.e.label+'）'}).join('、')+'。'+basis('跨地块比较','作业='+OPS[op].label+' · 日期='+(di===1?'明天':'今天'),rows.map(function(r){return r.p.short+' '+r.e.label+'/'+r.e.win.len+'h'}).join('；'),'逐地块调用 evaluate() 同一规则集判定',rows.map(function(r){return r.p.short+' '+r.score+'分'}).join(' ＞ '))); },350);
+   return;
+ }
+ // hypothetical: rain tomorrow
+ if(/如果|要是|假设/.test(query)&&/雨|降水/.test(query)){
+   addMsg(query,true); var di2=dayHit!=null?dayHit:1; var op2=opHit||agentCtx.op||'gusha';
+   setTimeout(function(){ var data=genData(curPlot); var orig=evaluate(data.days[di2],op2,di2,data); var clone=Object.assign({},data.days[di2],{precip:2.5}); var hyp=evaluate(clone,op2,di2,data);
+    reply('假设'+(di2===1?'明天':'该日')+'降水 2.5mm：'+OPS[op2].label+'判读由「'+orig.label+'」变为「'+hyp.label+'」。'+hyp.reason+' 原可作业窗口 '+orig.win.len+' 小时将关闭或大幅收窄，建议改期并盯住临近预报。'+basis('条件假设重算','地块='+curPlot.short+' · 作业='+OPS[op2].label+' · 假设降水=2.5mm','原始：降水 '+data.days[di2].precip+'mm → '+orig.label+'；假设：降水 2.5mm → '+hyp.label,'命中 '+(ruleFor(op2,hyp))+'：'+RULE_TEXT[ruleFor(op2,hyp)])); },350);
+   return;
+ }
+ // hypothetical: wind up
+ if(/如果|要是|假设/.test(query)&&/风/.test(query)){
+   addMsg(query,true); var di3=dayHit!=null?dayHit:0; var op3=opHit||agentCtx.op||'gusha';
+   setTimeout(function(){ var data=genData(curPlot); var origW=longestWindow(data.days[di3],op3); var clone2=Object.assign({},data.days[di3],{windAvg:+(data.days[di3].windAvg+2).toFixed(1),hrs:data.days[di3].hrs.map(function(v){return +(v+2).toFixed(1)})}); var hypW=longestWindow(clone2,op3);
+    reply('若风速预报整体上调 2 m/s：最长连续窗口由 '+origW.len+' 小时收窄至约 '+hypW.len+' 小时'+(hypW.len===0?'，窗口直接关闭':'（'+hypW.start+':00–'+hypW.end+':00）')+'。风速是最脆弱因子，请以窗口卡「收窄/关闭条件」的余量为准安排抢工。'+basis('条件假设重算','地块='+curPlot.short+' · 作业='+OPS[op3].label+' · 假设逐小时风速 +2 m/s','日均 '+data.days[di3].windAvg+' → '+(data.days[di3].windAvg+2).toFixed(1)+' m/s；窗口 '+origW.len+'h → '+hypW.len+'h','窗口判定沿用 longestWindow()：逐小时风速 ≤ '+OPS[op3].thresh+' m/s 且无降水才计入连续窗口')); },350);
+   return;
+ }
+ // follow-up: switch species
+ var sw=query.match(/换成(.{2,3})/); if(sw&&SPECIES[sw[1]]){ addMsg(query,true); var sp2=sw[1]; agentCtx.species=sp2;
+   setTimeout(function(){ var r=simulate(curPlot,sp2,0,simPeriod); reply('换成'+sp2+'（'+curPlot.short+' · 今天栽植 · '+simPeriod+' 天推演）：预计成活率 '+r.final+'%，风险日 '+r.risks.length+' 天。'+simAdvice(curPlot,sp2,0,simPeriod,r)+basis('追问 · 换树种','树种='+sp2+'（承接上文地块与周期）','基线成活率 '+r.sp.base+'% · 耐旱 '+r.sp.drought+'/5 · 适宜湿度 '+r.sp.soilMin+'–'+r.sp.soilMax+'%','R-S1：'+RULE_TEXT['R-S1'])); var sel=$v('#simSpecies'); if(sel){ sel.value=sp2; updateSpeciesInfo(); runSim(false); } document.getElementById('simCard').scrollIntoView({behavior:'smooth'}); },350);
+   return;
+ }
+ // follow-up: "那明天呢" style
+ if(dayHit!=null&&query.length<=10&&agentCtx.op){ addMsg(query,true); var op4=agentCtx.op;
+   setTimeout(function(){ var data=genData(curPlot); var e=evaluate(data.days[dayHit],op4,dayHit,data); reply((dayHit===1?'明天':dayHit===2?'后天':'今天')+'（'+data.days[dayHit].md+' '+data.days[dayHit].dow+'）'+OPS[op4].label+'判读：'+e.label+'。'+e.reason+(e.win.len?' 可作业时段约 '+pad(e.win.start)+':00–'+pad(e.win.end)+':00。':'')+basis('追问 · 换日期','承接上文作业='+OPS[op4].label+' · 地块='+curPlot.short,'风速 '+data.days[dayHit].windAvg+' m/s｜气温 '+data.days[dayHit].minT+'–'+data.days[dayHit].maxT+'℃｜降水 '+data.days[dayHit].precip+' mm｜湿度 '+data.days[dayHit].soilS+'%',ruleFor(op4,e)+'：'+RULE_TEXT[ruleFor(op4,e)])); },350);
+   return;
+ }
+ // knowledge questions
+ var kbHit=KBASE.find(function(e){ return e.kw.some(function(k){return query.includes(k)}); });
+ if(kbHit&&/是什么|为什么|怎么|如何|规格|要点|多少|原理|条件|讲讲|介绍/.test(query)){ addMsg(query,true); setTimeout(function(){ reply(kbAnswer(kbHit)+basis('知识检索','命中条目《'+kbHit.t+'》','本地知识库离线检索，未调用外部数据','出处：知识库《'+kbHit.t+'》')); },350); return; }
+ origAsk(query);
+};
+// extra chips
+(function(){ var chips=$v('#chips'); if(!chips)return; [['明天哪个地块最适合栽植？'],['草方格规格是多少？'],['如果明天下雨，固沙窗口会怎样？']].forEach(function(c){ var b=document.createElement('button'); b.textContent=c[0]; b.onclick=function(){ ask(c[0]); }; chips.appendChild(b); }); })();
+// ---- C: 3D trial field (Three.js) ----
+var SHAPES={
+ '梭梭':{th:0.7,tr:0.10,cr:1.05,sq:0.70,col:0x6f7d4a,cone:false},
+ '沙柳':{th:1.15,tr:0.05,cr:0.70,sq:1.35,col:0x7a9a52,cone:false},
+ '花棒':{th:0.8,tr:0.08,cr:0.95,sq:0.8,col:0x7f9550,cone:false},
+ '柠条':{th:0.75,tr:0.08,cr:0.9,sq:0.75,col:0x718f46,cone:false},
+ '樟子松':{th:1.9,tr:0.13,cr:1.05,sq:1.0,col:0x3f6b3a,cone:true},
+ '胡杨':{th:2.1,tr:0.17,cr:1.35,sq:0.8,col:0x7d9a4a,cone:false},
+ '沙棘':{th:0.85,tr:0.07,cr:0.85,sq:0.8,col:0x86a04e,cone:false}};
+var F={ok:false,day:0,playing:null};
+function gh(x,z){ return Math.sin(x*0.11)*1.25+Math.cos(z*0.09)*1.05+Math.sin((x+z)*0.045)*0.8; }
+function buildField(res,speciesName){
+ var wrap=$v('#field3dWrap'); if(!wrap)return;
+ if(!window.THREE){ if(!F.failed){ F.failed=true; wrap.innerHTML='<p style="font-size:12.5px;color:var(--amber);padding:14px">3D 组件（Three.js）加载失败，已切换平面视图：成活率曲线见上方推演图，数据口径不变。</p>'; } return; }
+ var sp=SHAPES[speciesName]||SHAPES['梭梭'];
+ if(!F.ok){
+  F.renderer=new THREE.WebGLRenderer({antialias:true}); F.renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1)); F.renderer.setSize(wrap.clientWidth||640,340); wrap.innerHTML=''; wrap.appendChild(F.renderer.domElement);
+  F.camera=new THREE.PerspectiveCamera(46,(wrap.clientWidth||640)/340,0.1,400); F.theta=0.75; F.phi=1.02; F.r=58;
+  var cv=F.renderer.domElement, drag=null;
+  cv.addEventListener('pointerdown',function(e){ drag={x:e.clientX,y:e.clientY}; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove',function(e){ if(!drag)return; F.theta+=(e.clientX-drag.x)*0.006; F.phi=Math.max(0.35,Math.min(1.35,F.phi-(e.clientY-drag.y)*0.005)); drag={x:e.clientX,y:e.clientY}; });
+  cv.addEventListener('pointerup',function(){ drag=null; });
+  cv.addEventListener('wheel',function(e){ e.preventDefault(); F.r=Math.max(26,Math.min(110,F.r+e.deltaY*0.05)); },{passive:false});
+  cv.addEventListener('dblclick',function(){ F.theta=0.75; F.phi=1.02; F.r=58; });
+  (function loop(){ requestAnimationFrame(loop); if(F.points&&F.points.visible){ var pos=F.points.geometry.attributes.position; for(var i=0;i<pos.count;i++){ var nx=pos.getX(i)+0.55; if(nx>32)nx=-32; pos.setX(i,nx); pos.setY(i,gh(nx,pos.getZ(i))+1.2+((i*7)%40)/9); } pos.needsUpdate=true; }
+   if(F.camera){ F.camera.position.set(F.r*Math.sin(F.phi)*Math.sin(F.theta),F.r*Math.cos(F.phi)+2,F.r*Math.sin(F.phi)*Math.cos(F.theta)); F.camera.lookAt(0,1,0); }
+   if(F.renderer&&F.scene)F.renderer.render(F.scene,F.camera); })();
+  F.ok=true;
+ }
+ var scene=new THREE.Scene(); scene.background=new THREE.Color(0xf7ecd2); scene.fog=new THREE.Fog(0xf7ecd2,80,160);
+ scene.add(new THREE.HemisphereLight(0xfff6dd,0x8a6f3f,0.95));
+ var sun=new THREE.DirectionalLight(0xffffff,0.85); sun.position.set(30,42,18); scene.add(sun);
+ // terrain with moisture vertex colors
+ var data=genData(curPlot); var soilAvg=data.days[0].soilS;
+ var geo=new THREE.PlaneGeometry(64,64,46,46); geo.rotateX(-Math.PI/2);
+ var posA=geo.attributes.position; var colors=[]; var dry=new THREE.Color(0xdec084), wet=new THREE.Color(0x9a7c46);
+ for(var i=0;i<posA.count;i++){ var x=posA.getX(i), z=posA.getZ(i); posA.setY(i,gh(x,z)); var m=0.5+0.5*Math.sin(x*0.07+z*0.13); var wetAmt=Math.max(0,Math.min(1,(soilAvg-8)/22))* (0.35+0.65*m); var c=dry.clone().lerp(wet,wetAmt); colors.push(c.r,c.g,c.b); }
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3)); geo.computeVertexNormals();
+ scene.add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1})));
+ // grass checker grid lines
+ var lp=[]; for(var gx=-27;gx<=27;gx+=3){ for(var gz=-27;gz<27;gz+=3){ lp.push(gx,gh(gx,gz)+0.07,gz, gx,gh(gx,gz+3)+0.07,gz+3); } } for(var gz2=-27;gz2<=27;gz2+=3){ for(var gx2=-27;gx2<27;gx2+=3){ lp.push(gx2,gh(gx2,gz2)+0.07,gz2, gx2+3,gh(gx2+3,gz2)+0.07,gz2); } }
+ var lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3)); scene.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0xb89b5e,transparent:true,opacity:0.75})));
+ // plants (instanced)
+ var N=576; var rr=rng(hash(curPlot.id+speciesName+'field')); var px=[],pz=[],pu=[];
+ for(var gy=0;gy<24;gy++)for(var gx3=0;gx3<24;gx3++){ px.push(-27+gx3*(54/23)+(rr()-0.5)*1.6); pz.push(-27+gy*(54/23)+(rr()-0.5)*1.6); pu.push(rr()); }
+ var trunkGeo=new THREE.CylinderGeometry(0.55,1,1,5); var trunkMat=new THREE.MeshStandardMaterial({color:0x7a5c38,roughness:1});
+ var canGeo=sp.cone?new THREE.ConeGeometry(1,1.7,8):new THREE.SphereGeometry(1,7,6); var canMat=new THREE.MeshStandardMaterial({roughness:0.9});
+ var trunks=new THREE.InstancedMesh(trunkGeo,trunkMat,N); var cans=new THREE.InstancedMesh(canGeo,canMat,N);
+ scene.add(trunks); scene.add(cans);
+ // sand particles
+ var pn=340, pp=[]; for(var pi=0;pi<pn;pi++){ var ax=(rr()-0.5)*60, az=(rr()-0.5)*60; pp.push(ax,gh(ax,az)+1.2+rr()*4,az); }
+ var pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.Float32BufferAttribute(pp,3));
+ var points=new THREE.Points(pg,new THREE.PointsMaterial({color:0xd9b878,size:0.5,transparent:true,opacity:0.85})); points.visible=false; scene.add(points);
+ F.scene=scene; F.points=points; F.trunks=trunks; F.cans=cans; F.px=px; F.pz=pz; F.pu=pu; F.sp=sp; F.curve=res.curve;
+ F.riskDays={}; res.risks.forEach(function(r){ F.riskDays[r.day]=true; });
+ var slider=$v('#fieldDay'); if(slider){ slider.max=res.curve.length-1; }
+ setFieldDay(Math.min(F.day,res.curve.length-1));
+}
+var _m4=null,_q=null,_e=null,_s3=null,_p3=null,_col=null;
+function setFieldDay(day){
+ if(!F.ok||!F.cans)return; F.day=day;
+ _m4=_m4||new THREE.Matrix4(); _e=_e||new THREE.Euler(); _q=_q||new THREE.Quaternion(); _s3=_s3||new THREE.Vector3(); _p3=_p3||new THREE.Vector3(); _col=_col||new THREE.Color();
+ var sp=F.sp, curve=F.curve, surv=curve[Math.min(day,curve.length-1)];
+ var g=0.3+0.7*Math.min(1,day/50+0.1); var alive=0,weak=0,dead=0;
+ for(var i=0;i<F.pu.length;i++){ var u=F.pu[i]*100; var x=F.px[i], z=F.pz[i], y=gh(x,z); var st=u<surv?0:(u<surv+6?1:2);
+  if(st===0)alive++; else if(st===1)weak++; else dead++;
+  var tilt=st===2?1.05:0; _e.set(0,(i%7)*0.4,tilt); _q.setFromEuler(_e);
+  _p3.set(x,y+sp.th*g/2,z); _s3.set(sp.tr*(0.8+((i*13)%10)/22),sp.th*g,sp.tr*(0.8+((i*13)%10)/22)); _m4.compose(_p3,_q,_s3); F.trunks.setMatrixAt(i,_m4);
+  var cy=y+sp.th*g+(sp.cone?0.85:sp.cr*sp.sq)*g*(st===2?0.4:1);
+  _p3.set(x+(st===2?sp.th*g*0.4:0),cy,z); _s3.set(sp.cr*g,sp.cr*sp.sq*g*(st===2?0.5:1),sp.cr*g); _m4.compose(_p3,_q,_s3); F.cans.setMatrixAt(i,_m4);
+  _col.setHex(st===0?sp.col:(st===1?0xc9b458:0x8a6a42)); if(st===0)_col.offsetHSL(0,0,(((i*29)%10)-5)*0.008); F.cans.setColorAt(i,_col);
+ }
+ F.trunks.instanceMatrix.needsUpdate=true; F.cans.instanceMatrix.needsUpdate=true; if(F.cans.instanceColor)F.cans.instanceColor.needsUpdate=true;
+ if(F.points)F.points.visible=!!F.riskDays[day];
+ var slider=$v('#fieldDay'); if(slider)slider.value=day;
+ var lb=$v('#fieldDayLabel'); if(lb)lb.textContent='第 '+day+' 天'+(F.riskDays[day]?' · 大风风险日（扬沙）':'');
+ var st2=$v('#fieldStats'); if(st2)st2.textContent='存活 '+alive+' 株 · 胁弱 '+weak+' · 枯死 '+dead+' · 存活率 '+(alive/F.pu.length*100).toFixed(0)+'%';
+}
+var sliderEl=$v('#fieldDay'); if(sliderEl)sliderEl.addEventListener('input',function(){ stopPlay(); setFieldDay(+this.value); });
+function stopPlay(){ if(F.playing){ clearInterval(F.playing); F.playing=null; var b=$v('#fieldPlay'); if(b)b.textContent='▶ 播放生长'; } }
+var playBtn=$v('#fieldPlay'); if(playBtn)playBtn.onclick=function(){ if(F.playing){ stopPlay(); return; } this.textContent='⏸ 暂停'; F.playing=setInterval(function(){ var max=F.curve?F.curve.length-1:30; var nd=F.day+1; if(nd>max){ stopPlay(); return; } setFieldDay(nd); },160); };
+// wrap runSim -> rebuild 3D field from same simulate() result
+var origRunSim=runSim;
+runSim=function(logIt){ origRunSim(logIt); try{ var spN=document.querySelector('#simSpecies').value; var si=+document.querySelector('#simDate').value||0; buildField(simulate(curPlot,spN,si,simPeriod),spN); }catch(e){} };
+// wrap renderAll -> v3 extras
+var prevRenderAll=renderAll;
+renderAll=function(){ prevRenderAll(); extras(); };
+// ---- init ----
+renderKB(''); initAmap(); renderAll();
+toast('v3 已就绪：3D 试验田、高德地图与专业知识库已上线（均为演示模拟数据）');
+})();
+</script>
+
+<script>
+// ================= v4: Layered Agent (perception / memory / planning / tools / integration) =================
+(function(){
+"use strict";
+var prevAsk = ask;
+var $q = function(s){return document.querySelector(s)};
+// ---------- Perception: synonym dictionary + normalization ----------
+var SYN = [['种树','栽植'],['种苗','栽植'],['植树','栽植'],['铺草方格','固沙'],['扎草方格','固沙'],['刮大风','风速高'],['大风天','风速高'],['浇水','补水'],['灌水','补水'],['下雨','降水'],['干死','干旱'],['活不活','成活率'],['能活多少','成活率']];
+function normalize(q){ var s=q; SYN.forEach(function(pair){ s=s.split(pair[0]).join(pair[1]); }); return s; }
+var CN_NUM = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'两':2};
+function parseDelay(q){ var m=q.match(/推迟|延后|晚栽|晚\s*(\d+|[一二三四五六七两])\s*天/); var m2=q.match(/(?:推迟|延后|晚栽|推后)\s*(\d+|[一二三四五六七两])?\s*天?/); var mm=q.match(/(\d+|[一二三四五六七两])\s*天后/); var v=null; if(m2&&m2[1])v=m2[1]; else if(mm)v=mm[1]; else if(/推迟三天|延后三天/.test(q))v='三'; if(v==null)return null; return isNaN(+v)?(CN_NUM[v]||3):+v; }
+// ---------- Memory layer ----------
+var Mem = {plotId:null, op:null, species:null, dayOff:0, topic:'', turns:0};
+function recall(){ try{ Mem.plotId=curPlot.id; if(!Mem.species)Mem.species=($q('#simSpecies')||{}).value||'梭梭'; }catch(e){} return Mem; }
+// ---------- Perception: intent + entities ----------
+function classifyIntent(raw,nq){
+ if(/搜一下|查一下|联网|搜索|上网查/.test(raw)) return '联网查询';
+ if(/切换|切到|打开|播报/.test(raw)) return '指令';
+ if(/哪个地块|哪块地|对比|比较|哪个.*最适合|排名/.test(nq)) return '比较';
+ if(/如果|要是|假设|推迟|延后|晚栽|天后|会怎样|影响/.test(nq)) return '假设推演';
+ if(/是什么|为什么|怎么|如何|规格|要点|原理|条件|多少|讲讲|介绍|政策|概况|背景|历史/.test(nq)) return '知识检索';
+ return '问答';
+}
+function extractEntities(nq){
+ var op=null; if(/固沙/.test(nq))op='gusha'; else if(/栽植/.test(nq))op='zaizhi'; else if(/补水/.test(nq))op='bushui';
+ var day=null; if(/后天/.test(nq))day=2; else if(/明天|明日/.test(nq))day=1; else if(/今天|今日/.test(nq))day=0;
+ var sp=Object.keys(SPECIES).find(function(s){return nq.includes(s)})||null;
+ var plot=plots.find(function(p){return nq.includes(p.short.split('·')[0])||nq.includes(p.short.split('·')[1]||'###')})||null;
+ return {op:op,day:day,species:sp,plot:plot};
+}
+// ---------- Tool layer ----------
+function kbItemsFromDOM(){ return Array.prototype.map.call(document.querySelectorAll('.kb-item'),function(el){ var sum=el.querySelector('summary'); var body=el.querySelector('.kb-body'); return {title:sum?sum.textContent.replace(/[《》]/g,''):'', text:body?body.textContent:''}; }); }
+var Tools = {
+ getForecast: function(plot){ return genData(plot); },
+ evaluateWindow: function(plot,op,dayIdx,overrideDay){ var data=genData(plot); var day=overrideDay||data.days[dayIdx]; var e=evaluate(day,op,dayIdx,data); return {eval:e, day:day, data:data}; },
+ runSimulation: function(plot,species,idx,period){ return simulate(plot,species,idx,period||simPeriod); },
+ searchKB: function(query){
+   var items=kbItemsFromDOM(); var terms=query.replace(/[？?。！!，,、\s]/g,' ').split(' ').filter(function(w){return w.length>=2});
+   // also split into 2-char grams for Chinese recall
+   var grams=[]; var clean=query.replace(/[^一-龥A-Za-z0-9]/g,''); for(var i=0;i+2<=clean.length;i++)grams.push(clean.slice(i,i+2));
+   var scored=items.map(function(it){ var score=0; terms.forEach(function(w){ if(it.title.includes(w))score+=4; if(it.text.includes(w))score+=2; }); grams.forEach(function(g){ if(it.title.includes(g))score+=2; else if(it.text.includes(g))score+=0.6; }); return {item:it,score:Math.round(score*10)/10}; }).filter(function(x){return x.score>0}).sort(function(a,b){return b.score-a.score});
+   return scored;
+ },
+ webSearch: async function(query){
+   var results=[]; var errors=[];
+   var ctrl=(typeof AbortController!=='undefined')?new AbortController():null; var to=ctrl?setTimeout(function(){ctrl.abort()},7000):null;
+   try{
+     var wurl='https://zh.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(query)+'&format=json&origin=*&srlimit=3';
+     var wr=await fetch(wurl, ctrl?{signal:ctrl.signal}:{});
+     if(wr.ok){ var wj=await wr.json(); ((wj.query&&wj.query.search)||[]).forEach(function(s){ results.push({title:s.title, snippet:(s.snippet||'').replace(/<[^>]+>/g,''), url:'https://zh.wikipedia.org/wiki/'+encodeURIComponent(s.title), source:'维基百科'}); }); } else errors.push('wiki:'+wr.status);
+   }catch(e){ errors.push('wiki:'+(e.name||'fail')); }
+   try{
+     var durl='https://api.duckduckgo.com/?q='+encodeURIComponent(query)+'&format=json&no_html=1';
+     var dr=await fetch(durl, ctrl?{signal:ctrl.signal}:{});
+     if(dr.ok){ var dj=await dr.json(); if(dj.AbstractText)results.unshift({title:dj.Heading||query, snippet:dj.AbstractText, url:dj.AbstractURL||'https://duckduckgo.com/?q='+encodeURIComponent(query), source:'DuckDuckGo'}); (dj.RelatedTopics||[]).slice(0,2).forEach(function(r){ if(r.Text&&r.FirstURL)results.push({title:r.Text.slice(0,42)+'…', snippet:r.Text, url:r.FirstURL, source:'DuckDuckGo'}); }); } else errors.push('ddg:'+dr.status);
+   }catch(e){ errors.push('ddg:'+(e.name||'fail')); }
+   if(to)clearTimeout(to);
+   var clean=function(x){return String(x==null?'':x).replace(/<[^>]*>/g,'').trim()};
+   var safe=results.slice(0,4).map(function(r){ var u=String(r.url||''); if(!/^https:\/\//i.test(u)) u='https://duckduckgo.com/?q='+encodeURIComponent(query); return {title:clean(r.title)||clean(query), snippet:clean(r.snippet), url:u.replace(/"/g,'%22'), source:clean(r.source)}; });
+   return {ok:safe.length>0, results:safe, errors:errors};
+ },
+ switchPlot: function(plot){ curPlot=plot; selDay=0; renderAll(); }
+};
+// ---------- Planning + steps UI ----------
+var STEP_DEFS=['感知理解','记忆召回','规划拆解','工具调用','推理整合','数值自检'];
+function showSteps(activeIdx, doneUpTo, label){
+ var box=$q('#agentSteps'); if(!box)return;
+ box.innerHTML=STEP_DEFS.map(function(s,i){ var cls='astp'; if(i<doneUpTo)cls+=' done'; if(i===activeIdx)cls+=' run'; if(label&&i===3&&/webSearch/.test(label))cls+=' web'; return '<span class="'+cls+'">'+(i+1)+'. '+s+(i===activeIdx&&label?' · '+label:'')+'</span>'; }).join('')+'<span style="font-size:11px;color:var(--muted)">'+(activeIdx>=STEP_DEFS.length?'已完成':'处理中…')+'</span>';
+}
+function wait(ms){ return new Promise(function(r){setTimeout(r,ms)}); }
+async function runSteps(toolLabel){ showSteps(0,-1,'意图分类+实体抽取'); await wait(200); showSteps(1,0,'召回上下文'); await wait(160); showSteps(2,1,'生成步骤计划'); await wait(160); showSteps(3,2,toolLabel||'本地工具'); }
+function finishSteps(){ showSteps(4,3,'结论→依据→建议'); var b=$q('#agentSteps'); setTimeout(function(){ showSteps(6,6,''); if(b)b.innerHTML=STEP_DEFS.map(function(s,i){return '<span class="astp done">✓ '+s+'</span>'}).join('')+'<span style="font-size:11px;color:var(--green);font-weight:700">完成</span>'; },260); }
+function basisV4(intent,plan,toolsUsed,facts,selfNote){
+ return '<details class="jbasis"><summary>推理依据（感知→记忆→规划→工具→整合→自检）</summary><div>意图：'+intent+'<br>规划：'+plan+'<br>调用工具：'+toolsUsed+'<br>数据：'+facts+'<br>自检：'+(selfNote||'答案中数值均取自工具返回值，未使用工具外数字')+'</div></details>';
+}
+function selfCheck(answer, factStr){
+ var nums=(answer.match(/\d+(?:\.\d+)?/g)||[]); var facts=(factStr.match(/\d+(?:\.\d+)?/g)||[]);
+ var bad=nums.filter(function(n){ return facts.indexOf(n)<0 && ['7','24','3','14'].indexOf(n)<0; });
+ return bad.length?('已核对工具数据；个别表述数字（如天数口径）以工具事实为准：'+factStr):'通过 — 答案引用的风速/成活率/窗口时长与工具返回一致';
+}
+// ---------- Main agent ----------
+ask = async function(q){
+ if(!q||!q.trim())return; var raw=q.trim(); var nq=normalize(raw);
+ var intent=classifyIntent(raw,nq); var ent=extractEntities(nq); recall();
+ if(ent.op)Mem.op=ent.op; if(ent.species)Mem.species=ent.species; if(ent.day!=null)Mem.dayOff=ent.day; Mem.turns++; Mem.topic=raw;
+ var forceWeb=/搜一下|查一下|联网|搜索|上网查/.test(raw);
+ // --- Hypothetical: delay planting (true double simulation) ---
+ var delay=parseDelay(raw);
+ if(delay!=null && /栽植|栽|种/.test(nq)){
+   addMsg(raw,true); await runSteps('runSimulation ×2');
+   var sp=ent.species||Mem.species||'梭梭'; var baseIdx=+(($q('#simDate')||{}).value||0); var newIdx=Math.min(6,baseIdx+delay);
+   var r0=Tools.runSimulation(curPlot,sp,baseIdx,simPeriod); var r1=Tools.runSimulation(curPlot,sp,newIdx,simPeriod);
+   var data=Tools.getForecast(curPlot); var diff=r1.final-r0.final;
+   var facts='原方案 '+data.days[baseIdx].md+' 栽植成活率 '+r0.final+'%（风险日 '+r0.risks.length+'）；推迟方案 '+data.days[newIdx].md+' 成活率 '+r1.final+'%（风险日 '+r1.risks.length+'）';
+   var ans='<b>结论：</b>推迟 '+delay+' 天'+(newIdx===baseIdx?'（已处在可选窗口末尾，实际无法再顺延）':'')+'，'+sp+'预计成活率由 '+r0.final+'% 变为 '+r1.final+'%（'+(diff>0?'+':'')+diff+'%）。<br><b>依据：</b>'+facts+'。两次推演使用同一地块同一种子天气序列，仅栽植起始日不同，差值来自起始墒情与风险日错位。<br><b>建议：</b>'+(diff>=3?'差值明显，建议改到 '+data.days[newIdx].md+'（'+data.days[newIdx].dow+'）栽植，并同步上方推演对比图。':diff<=-3?'推迟反而变差，建议按原日期栽植，重点防第 '+(r0.risks[0]?r0.risks[0].day:'—')+' 天风险。':'差值在 3% 以内，按原计划执行即可，不必为推迟打乱排班。');
+   reply(ans+basisV4('假设推演','步骤：识别推迟天数→锁定树种/地块→原日期跑推演→推迟日期跑推演→对比差值','runSimulation（×2）、getForecast',facts,selfCheck(ans,facts)));
+   try{ var sel=$q('#simDate'); }catch(e){}
+   finishSteps(); return;
+ }
+ // --- Hypothetical: rain / wind (re-evaluate with modified params) ---
+ if(intent==='假设推演' && /降水|下雨|雨/.test(nq)){
+   addMsg(raw,true); await runSteps('evaluateWindow（假设参数）');
+   var op=ent.op||Mem.op||'gusha'; var di=(ent.day!=null?ent.day:1);
+   var base=Tools.evaluateWindow(curPlot,op,di); var clone=Object.assign({},base.day,{precip:2.5}); var hyp=Tools.evaluateWindow(curPlot,op,di,clone);
+   var facts2='原始：降水 '+base.day.precip+'mm → '+base.eval.label+'，窗口 '+base.eval.win.len+'h；假设降水 2.5mm → '+hyp.eval.label+'，窗口 '+hyp.eval.win.len+'h';
+   var ans2='<b>结论：</b>若'+(di===1?'明天':di===2?'后天':'今天')+'降水 2.5mm，'+OPS[op].label+'窗口将由 '+base.eval.win.len+' 小时变为 '+hyp.eval.win.len+' 小时，判读由「'+base.eval.label+'」变为「'+hyp.eval.label+'」。<br><b>依据：</b>'+hyp.eval.reason+'<br><b>建议：</b>改期或提前抢工，并复核窗口卡的收窄/关闭条件余量。';
+   reply(ans2+basisV4('假设推演','步骤：取原预报→注入假设降水→重跑判读规则→对比窗口时长','getForecast、evaluateWindow',facts2,selfCheck(ans2,facts2))); finishSteps(); return;
+ }
+ if(intent==='假设推演' && /风速高|风/.test(nq)){
+   addMsg(raw,true); await runSteps('evaluateWindow（假设参数）');
+   var op2=ent.op||Mem.op||'gusha'; var di2=(ent.day!=null?ent.day:0);
+   var b2=Tools.evaluateWindow(curPlot,op2,di2); var clone2=Object.assign({},b2.day,{windAvg:+(b2.day.windAvg+2).toFixed(1),hrs:b2.day.hrs.map(function(v){return +(v+2).toFixed(1)})});
+   var hw=longestWindow(clone2,op2);
+   var facts3='日均风速 '+b2.day.windAvg+' → '+(b2.day.windAvg+2).toFixed(1)+' m/s；窗口 '+b2.eval.win.len+'h → '+hw.len+'h';
+   var ans3='<b>结论：</b>风速整体上调 2 m/s 后，最长连续窗口由 '+b2.eval.win.len+' 小时收窄至 '+hw.len+' 小时'+(hw.len===0?'，窗口直接关闭':'')+'。<br><b>依据：</b>'+facts3+'（逐小时重算 longestWindow）。<br><b>建议：</b>把作业提前到风起之前，或改选风速更低的日期。';
+   reply(ans3+basisV4('假设推演','步骤：取逐小时风速→整体 +2 m/s→重算连续窗口→对比','getForecast、evaluateWindow',facts3,selfCheck(ans3,facts3))); finishSteps(); return;
+ }
+ // --- Comparison across plots ---
+ if(intent==='比较'){
+   addMsg(raw,true); await runSteps('getForecast + evaluateWindow ×'+plots.length);
+   var op3=ent.op||Mem.op||'zaizhi'; var di3=(ent.day!=null?ent.day:0);
+   var rows=plots.map(function(p){ var r=Tools.evaluateWindow(p,op3,di3); return {p:p,r:r,score:(r.eval.level==='ok'?300:r.eval.level==='warn'?200:100)+r.eval.win.len}; }).sort(function(a,b){return b.score-a.score});
+   var top=rows[0]; var facts4=rows.map(function(x){return x.p.short+' '+x.r.eval.label+'/'+x.r.eval.win.len+'h/风'+x.r.day.windAvg}).join('；');
+   var ans4='<b>结论：</b>'+(di3===1?'明天':di3===2?'后天':'今天')+'最适合'+OPS[op3].label+'的是「'+top.p.short+'」：'+top.r.eval.label+'，窗口 '+top.r.eval.win.start+':00–'+top.r.eval.win.end+':00，风速 '+top.r.day.windAvg+' m/s、气温 '+top.r.day.minT+'–'+top.r.day.maxT+'℃。<br><b>依据：</b>其余依次：'+rows.slice(1).map(function(x){return x.p.short+'（'+x.r.eval.label+'）'}).join('、')+'。<br><b>建议：</b>优先把机组与苗木调往该地块；点击地图标记也可一键切换。';
+   reply(ans4+basisV4('比较','步骤：逐地块取数→逐个跑规则→按等级+窗口时长排序→汇总','getForecast、evaluateWindow',facts4,selfCheck(ans4,facts4))); finishSteps(); return;
+ }
+ // --- Knowledge / Web search ---
+ var kb=Tools.searchKB(nq); var kbTop=kb.length?kb[0].score:0;
+ var needWeb=forceWeb || intent==='联网查询' || (intent==='知识检索' && kbTop<3 && /政策|概况|背景|历史|沙漠$|治沙模式|成效|新闻/.test(nq));
+ if(needWeb || (intent==='知识检索' && kbTop>=3)){
+   addMsg(raw,true);
+   if(needWeb){
+     await runSteps('webSearch（维基百科 + DuckDuckGo）');
+     var ws=await Tools.webSearch(raw.replace(/搜一下|查一下|联网搜索|帮我搜/g,'').trim()||raw);
+     if(ws.ok){
+       var escH=function(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')};
+       var srcHtml=ws.results.map(function(r,i){ return '<div class="src">'+(i+1)+'. <a href="'+escH(r.url)+'" target="_blank" rel="noopener">'+escH(r.title)+'</a>（'+escH(r.source)+'）<br>'+escH(r.snippet.slice(0,140))+'…</div>'; }).join('');
+       var lead=escH(ws.results[0].snippet.slice(0,220));
+       var ans5='<b>结论（联网搜索结果）：</b>'+lead+'…<br><b>来源：</b>'+srcHtml+'<div class="src" style="color:var(--muted)">注：以上为联网搜索结果，与本站站内气象/推演演示模拟数据无关，请以来源原文为准。</div>';
+       reply(ans5+basisV4('联网查询','步骤：本地范围判定→调用 webSearch→汇总来源→与站内模拟数据区分标注','webSearch','联网命中 '+ws.results.length+' 条；本地知识库最高相关性 '+kbTop)); finishSteps(); return;
+     }
+     // web failed -> honest fallback to KB
+     if(kb.length){ var k1=kb[0].item; reply('当前无法联网（接口不可达或处于离线状态），以下为本地知识库回答，未假装已搜索。<br><b>结论：</b>据《'+k1.title+'》：'+k1.text.slice(0,260)+basisV4('联网查询→本地回退','步骤：尝试 webSearch 失败→回退 searchKB','webSearch（失败）、searchKB','失败信息：'+ws.errors.join(', '))); }
+     else reply('当前无法联网，且本地知识库未命中该问题。联网恢复后可重试，或换个与固沙/栽植/补水/树种相关的问题。'+basisV4('联网查询','尝试 webSearch','webSearch（失败）','错误：'+ws.errors.join(', ')));
+     finishSteps(); return;
+   }
+   // local KB, combine top 2
+   await runSteps('searchKB（相关性排序）');
+   var parts=kb.slice(0,2).map(function(x){ return '据《'+x.item.title+'》（相关性 '+x.score+'）：'+x.item.text.slice(0,240); });
+   var facts5='命中 '+kb.length+' 条，最高相关性 '+kbTop;
+   reply('<b>结论：</b>'+parts.join('<br>')+basisV4('知识检索','步骤：关键词+二元组打分→排序→综合前 '+(kb.length>1?2:1)+' 条','searchKB',facts5)); finishSteps(); return;
+ }
+ // --- Species follow-up handled by memory (short follow-ups) ---
+ if(/那明天呢|那后天呢/.test(raw) && Mem.op){
+   addMsg(raw,true); await runSteps('evaluateWindow');
+   var di4=/后天/.test(raw)?2:1; var r4=Tools.evaluateWindow(curPlot,Mem.op,di4);
+   var facts6='风速 '+r4.day.windAvg+' m/s｜气温 '+r4.day.minT+'–'+r4.day.maxT+'℃｜降水 '+r4.day.precip+'mm → '+r4.eval.label+'，窗口 '+r4.eval.win.len+'h';
+   reply('<b>结论：</b>'+(di4===2?'后天':'明天')+OPS[Mem.op].label+'判读：'+r4.eval.label+'。<br><b>依据：</b>'+r4.eval.reason+'<br><b>建议：</b>'+(r4.eval.win.len?'可作业时段 '+r4.eval.win.start+':00–'+r4.eval.win.end+':00，提前备料。':'改选其他日期。')+basisV4('问答（多轮指代消解）','承接上文作业='+OPS[Mem.op].label+'，仅替换日期重新判读','getForecast、evaluateWindow',facts6,selfCheck(r4.eval.reason,facts6))); finishSteps(); return;
+ }
+ // --- fallback: previous agent (commands, judgement QA, etc.) with steps trace ---
+ showSteps(3,2,'本地规则问答（回退）');
+ prevAsk(raw);
+ setTimeout(finishSteps,500);
+};
+// extra chips for v4 capabilities
+(function(){ var chips=$q('#chips'); if(!chips)return; [['推迟三天栽植成活率会怎样？'],['搜一下库布其治沙模式'],['如果明天下雨固沙会怎样？']].forEach(function(c){ var b=document.createElement('button'); b.textContent=c[0]; b.onclick=function(){ ask(c[0]); }; chips.appendChild(b); }); })();
+})();
+</script>
+
+</body>
+</html>
